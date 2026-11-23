@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorpresa Navideña</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        christmas: {
+                            red: '#991b1b',
+                            gold: '#d4af37',
+                            green: '#166534',
+                            dark: '#0f172a'
+                        }
+                    },
+                    animation: {
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-in': 'bounceIn 1s cubic-bezier(0.280, 0.840, 0.420, 1) forwards',
+                        'blink-text': 'blinkText 1.5s infinite'
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        bounceIn: {
+                            '0%': { transform: 'scale(0.3)', opacity: 0 },
+                            '50%': { transform: 'scale(1.05)', opacity: 1 },
+                            '70%': { transform: 'scale(0.9)' },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                        },
+                        blinkText: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            /* Fondo de noche de invierno estrellada */
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: white;
+            overflow: hidden; /* Evita scroll por la nieve */
+        }
+
+        /* Efecto Cristal (Glassmorphism) para las tarjetas */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Transiciones de pantalla */
+        .screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Nieve cayendo - CSS puro */
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: #fff;
+            font-size: 1em;
+            font-family: Arial, sans-serif;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+            user-select: none;
+            z-index: 0;
+            animation-name: fall, shake;
+            animation-duration: 10s, 3s;
+            animation-timing-function: linear, ease-in-out;
+            animation-iteration-count: infinite, infinite;
+            animation-play-state: running, running;
+        }
+        @keyframes fall {
+            0% { top: -10% }
+            100% { top: 110% }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) }
+            50% { transform: translateX(20px) }
+        }
+        
+        /* Efecto de cursor parpadeante para la terminal */
+        .cursor::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+            margin-left: 4px;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center font-sans antialiased relative">
+
+    <!-- Capa para el destello blanco (Flashazo) -->
+    <div id="flash-overlay" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-[100] transition-opacity duration-300"></div>
+
+    <!-- Contenedor de nieve generada por JS -->
+    <div id="snow-container" class="absolute inset-0 pointer-events-none"></div>
+
+    <!-- PANTALLA 1: TERMINAL (NUEVA PORTADA) -->
+    <div id="screen-1" class="screen active flex-col items-start justify-center w-full h-full p-6 z-50 bg-black absolute inset-0 text-left font-mono text-green-400 sm:text-lg text-sm">
+        <div class="w-full max-w-3xl mx-auto flex flex-col gap-4">
+            <p id="term-1"></p>
+            <p id="term-2"></p>
+            <p id="term-3"></p>
+            <p id="term-4"></p>
+            <p id="term-5"></p>
+            
+            <p id="term-6" class="mt-4 text-green-400"></p>
+            <p id="term-loading" class="text-green-400"></p>
+            <p id="term-7" class="text-green-400 mt-2"></p>
+            
+            <div id="term-input-wrapper" class="w-full relative mt-4 hidden opacity-0 transition-opacity duration-1000">
+                <div class="flex items-center w-full">
+                    <span class="mr-2">></span>
+                    <input type="text" id="input-1" autocomplete="off" class="w-full bg-transparent border-none outline-none text-green-400 font-mono focus:ring-0 caret-green-400">
+                </div>
+                <p id="error-1" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Acceso denegado. Inténtalo de nuevo.</p>
+            </div>
+            <!-- Botón oculto que se activa con la tecla Enter -->
+            <button onclick="checkAnswer(1, 'piedra', 2)" class="hidden">Adivinar</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA TÍTULO: INTRODUCCIÓN TIPO JUEGO -->
+    <div id="screen-title" class="screen w-full h-full flex flex-col items-center justify-center p-6 z-10 text-center cursor-pointer relative" onclick="nextScreen('title', 3)">
+        
+        <!-- REEMPLAZA 'URL_LOGO_AQUI' POR EL ENLACE A TU LOGO PNG SIN FONDO -->
+        <div class="absolute top-20 sm:top-32 w-full flex justify-center">
+            <img id="logo-img" src="URL_LOGO_AQUI" alt="Las aventuras de Borobombon con Gabrielín" class="h-40 sm:h-56 object-contain opacity-0 transform scale-50">
+        </div>
+        
+        <!-- Contenedor de las fotos (Sin marcos, imágenes PNG completas) -->
+        <div class="flex justify-between items-end w-full max-w-4xl px-4 absolute top-1/2 transform -translate-y-1/2 mt-16 sm:mt-24 pointer-events-none">
+            
+            <!-- REEMPLAZA 'URL_TU_FOTO_AQUI' POR EL ENLACE A TU FOTO PNG SIN FONDO -->
+            <img id="novio-img" src="URL_TU_FOTO_AQUI" alt="Gabrielín" class="w-32 h-auto max-h-64 sm:w-64 object-contain opacity-0 transition-opacity duration-1000">
+            
+            <!-- REEMPLAZA 'URL_FOTO_NOVIA_AQUI' POR EL ENLACE A LA FOTO DE TU NOVIA PNG SIN FONDO -->
+            <img id="novia-img" src="URL_FOTO_NOVIA_AQUI" alt="Borobombon" class="w-32 h-auto max-h-64 sm:w-64 object-contain opacity-0 transition-opacity duration-1000">
+        </div>
+
+        <!-- Texto parpadeante para continuar -->
+        <div id="start-text" class="absolute bottom-16 sm:bottom-20 w-full text-center text-white font-sans text-lg sm:text-xl tracking-widest opacity-0 uppercase font-light drop-shadow-md">
+            Pulse la pantalla para empezar
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: HISTORIA INICIAL Y MAPA -->
+    <div id="screen-3" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-green-400 font-mono text-sm mb-2">MENSAJE ENCRIPTADO</span>
+            <h2 class="font-serif text-xl mb-4 leading-relaxed text-white">
+                "Atención Agente Borobombon. El Escuadrón Elfo ha tomado el control del mapa. Se te han asignado 5 misiones encubiertas por Madrid. Solo tu ingenio nos salvará."
+            </h2>
+            <!-- REEMPLAZA 'URL_MAPA_AQUI' POR TU MAPA -->
+            <div class="w-full h-40 bg-white/10 rounded-xl border border-white/20 mb-6 flex items-center justify-center overflow-hidden">
+                <img src="URL_MAPA_AQUI" alt="Mapa Misión" class="object-cover w-full h-full opacity-80" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <span class="text-gray-400 text-sm hidden absolute">Mapa Top Secret</span>
+            </div>
+            <button onclick="nextScreen(3, 4)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                Entendido, continuar
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 4: INSTRUCCIONES Y FECHA -->
+    <div id="screen-4" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Planificación táctica</span>
+            <p class="mb-6 text-white font-light">
+                Esta misión requiere luz diurna y alta movilidad. Selecciona la fecha de ejecución para sincronizar los sistemas.
+            </p>
+            <input type="date" id="date-mission" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all mb-6">
+            <button onclick="nextScreen(4, 5)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                Fijar fecha de misión
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 5: DIRECCIONES PRUEBA 1 -->
+    <div id="screen-5" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Fase 1: Abastecimiento</span>
+            <h2 class="font-serif text-2xl mb-6 leading-relaxed">
+                Coordenadas recibidas. Dirígete a la zona cero.
+            </h2>
+            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
+                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
+                <p class="text-white italic">"Es un lugar donde el oro líquido es negro y espumoso."</p>
+            </div>
+            <button onclick="nextScreen(5, 6)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                He llegado a la zona cero
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 6: PRUEBA 1 (DESAYUNO) -->
+    <div id="screen-6" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 1</span>
+            <p class="mb-6 text-white">Introduce el código visual que encontrarás en este local para verificar tu posición.</p>
+            <div class="w-full relative">
+                <input type="text" id="input-6" placeholder="Contraseña de la fase 1" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
+                <p id="error-6" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Código incorrecto. Revisa el entorno.</p>
+            </div>
+            <button onclick="checkAnswer(6, 'cafe', 7)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
+                Verificar
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 7: DIRECCIONES PRUEBA 2 -->
+    <div id="screen-7" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Fase 2: Infiltración</span>
+            <p class="mb-4 text-green-300 font-mono text-sm">Nivel de energía óptimo. Prepárate para moverte rápido, el tiempo corre en nuestra contra.</p>
+            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
+                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
+                <p class="text-white italic">"Busca el edificio donde la gente paga voluntariamente para ser encerrada."</p>
+            </div>
+            <button onclick="nextScreen(7, 8)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                He llegado al objetivo
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 8: PRUEBA 2 (ESCAPE ROOM) -->
+    <div id="screen-8" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 2</span>
+            <p class="mb-6 text-white">Los elfos han bloqueado el acceso. Introduce la clave que obtuviste al sobrevivir al encierro.</p>
+            <div class="w-full relative">
+                <input type="text" id="input-8" placeholder="Contraseña de salida" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
+                <p id="error-8" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Acceso denegado. Piensa mejor.</p>
+            </div>
+            <button onclick="checkAnswer(8, 'escape', 9)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
+                Hackear sistema
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 9: DIRECCIONES PRUEBA 3 -->
+    <div id="screen-9" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Fase 3: Punto de Extracción</span>
+            <p class="mb-4 text-green-300 font-mono text-sm">Increíble despliegue de intelecto. Los elfos están en retirada.</p>
+            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
+                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
+                <p class="text-white italic">"Busca el único lugar de Madrid donde puedes pisar arena de playa sin ver el mar."</p>
+            </div>
+            <button onclick="nextScreen(9, 10)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                Entrar al refugio
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 10: PRUEBA 3 (COMIDA) -->
+    <div id="screen-10" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 3</span>
+            <p class="mb-6 text-white">Confirma que estás en un perímetro seguro para reponer fuerzas.</p>
+            <div class="w-full relative">
+                <input type="text" id="input-10" placeholder="¿Qué pisas ahora mismo?" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
+                <p id="error-10" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Eso no suena a un refugio seguro.</p>
+            </div>
+            <button onclick="checkAnswer(10, 'arena', 11)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
+                Verificar
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 11: DESCANSO -->
+    <div id="screen-11" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <div class="text-4xl mb-4">☕🚶‍♀️</div>
+            <h2 class="font-serif text-2xl mb-4 text-christmas-gold">Tregua Temporal</h2>
+            <p class="text-white font-light mb-6">
+                Los niveles de alerta han bajado. Tienes permiso de la Agencia para un paseo recreativo de 60 minutos y consumo de cafeína libre por las calles del centro.
+            </p>
+            <button onclick="nextScreen(11, 12)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                Continuar tras el descanso
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 12: DIRECCIONES PRUEBA 4 -->
+    <div id="screen-12" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Fase 4: Camuflaje</span>
+            <p class="mb-4 text-red-300 font-mono text-sm">La tregua ha terminado. Necesitamos que forjes un artefacto con tus propias manos.</p>
+            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
+                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
+                <p class="text-white italic">"Dirígete al lugar donde el arte se funde con la cerámica para crear engaños perfectos."</p>
+            </div>
+            <button onclick="nextScreen(12, 13)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                Entrar al taller
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 13: PRUEBA 4 (TAZAS) -->
+    <div id="screen-13" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 4</span>
+            <p class="mb-6 text-white">¿Qué tipo de artefacto has fabricado para burlar a las patrullas elfas?</p>
+            <div class="w-full relative">
+                <input type="text" id="input-13" placeholder="Objeto fabricado" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
+                <p id="error-13" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Ese artefacto no servirá. Intenta de nuevo.</p>
+            </div>
+            <button onclick="checkAnswer(13, 'taza', 14)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
+                Registrar artefacto
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 14: DIRECCIONES PRUEBA 5 -->
+    <div id="screen-14" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Fase 5: La Fortaleza Final</span>
+            <p class="mb-4 text-green-300 font-mono text-sm">Artefacto asegurado. Queda la última parada para el asalto final.</p>
+            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
+                <p class="text-sm font-mono text-green-300">INSTRUCCIÓN TÁCTICA:</p>
+                <p class="text-white italic">"Solicita un vehículo de extracción de dos ruedas y cruza la ciudad hacia la base enemiga para la batalla final."</p>
+            </div>
+            <button onclick="nextScreen(14, 15)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
+                He llegado a la base
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 15: PRUEBA 5 (CENA) -->
+    <div id="screen-15" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
+            <span class="text-christmas-gold font-serif italic mb-2">Última Defensa Elfa</span>
+            <p class="mb-6 text-white">Para derrotar al Líder Elfo y recuperar tu regalo, debes reclamar la victoria dulce. ¿Qué momento marca el final del combate?</p>
+            <div class="w-full relative">
+                <input type="text" id="input-15" placeholder="El dulce final..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
+                <p id="error-15" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Aún no hemos terminado. Concéntrate.</p>
+            </div>
+            <button onclick="checkAnswer(15, 'postre', 16)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
+                Asestar Golpe Final
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 16: FINAL (REVELACIÓN) -->
+    <div id="screen-16" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
+        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-christmas-gold/20 to-transparent pointer-events-none"></div>
+            
+            <div class="text-6xl mb-4 animate-pulse-slow">❤️🎄✨</div>
+            <h1 class="font-serif text-3xl sm:text-4xl font-semibold mb-4 text-christmas-gold leading-tight">
+                Misión Completada
+            </h1>
+            <p class="text-lg text-white font-light leading-relaxed mb-6">
+                Elfo derrotado. Madrid está a salvo y Gabrielín te quiere más que nunca.
+            </p>
+            <div class="text-2xl font-serif text-white">
+                ¡Feliz Navidad!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DE RESPUESTAS ---
+        function normalizeString(str) {
+            return str
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Quita tildes
+                .replace(/\s+/g, '');            // Quita espacios
+        }
+
+        function checkAnswer(currentStep, correctAnswer, nextStep) {
+            const inputElement = document.getElementById(`input-${currentStep}`);
+            const errorElement = document.getElementById(`error-${currentStep}`);
+            const userAnswer = inputElement.value;
+
+            const normalizedUser = normalizeString(userAnswer);
+            const normalizedCorrect = normalizeString(correctAnswer);
+            
+            // Comprobación base o si incluye la palabra
+            let isCorrect = (normalizedUser === normalizedCorrect || normalizedUser.includes(normalizedCorrect));
+
+            if (isCorrect) {
+                // Ocultar error
+                errorElement.style.opacity = '0';
+                inputElement.classList.remove('animate-shake', 'border-red-400', 'bg-red-400/20');
+                
+                if (currentStep === 1) {
+                    startLoadingSequence();
+                } else {
+                    nextScreen(currentStep, nextStep);
+                }
+            } else {
+                // Mostrar error y animar input
+                errorElement.style.opacity = '1';
+                inputElement.classList.remove('animate-shake');
+                void inputElement.offsetWidth; // Trigger reflow
+                inputElement.classList.add('animate-shake', 'border-red-400', 'bg-red-400/20');
+            }
+        }
+
+        function startLoadingSequence() {
+            // Ocultar el input con un fundido rápido
+            const inputWrapper = document.getElementById('term-input-wrapper');
+            inputWrapper.style.transitionDuration = '500ms'; // Aceleramos el desvanecimiento del input
+            inputWrapper.style.opacity = '0';
+            
+            setTimeout(() => {
+                inputWrapper.classList.add('hidden');
+                
+                // Empezar a escribir la confirmación
+                typeWriter('Entrada correcta, empieza ejecución de operación "Regalo Borobombon"', 'term-6', 40, () => {
+                    setTimeout(() => {
+                        // Configurar el elemento de carga
+                        const loadingElement = document.getElementById('term-loading');
+                        loadingElement.classList.add('cursor');
+                        loadingElement.innerHTML = 'Cargando...... <span id="loading-pct">0</span>%';
+                        
+                        // Contador del 0 al 100% en aproximadamente 3 segundos
+                        let pct = 0;
+                        const interval = setInterval(() => {
+                            pct += Math.floor(Math.random() * 4) + 1; // Sube en saltos más pequeños (1 a 4)
+                            if (pct >= 100) {
+                                pct = 100;
+                                clearInterval(interval);
+                                document.getElementById('loading-pct').innerText = pct;
+                                loadingElement.classList.remove('cursor');
+                                
+                                // Esperar medio segundo al llegar al 100% y escribir texto final
+                                setTimeout(() => {
+                                    typeWriter("Carga correcto, iniciando...", "term-7", 40, () => {
+                                        // Llamar al flashazo tras escribir la frase
+                                        setTimeout(triggerFlashTransition, 400);
+                                    });
+                                }, 500);
+                            } else {
+                                document.getElementById('loading-pct').innerText = pct;
+                            }
+                        }, 75); // Velocidad del contador ajustada (75ms * ~40 pasos = 3 segundos)
+                    }, 400); // Pausa corta antes de empezar a cargar
+                });
+            }, 500);
+        }
+
+        /**
+         * Activa el destello blanco antes de cambiar de pantalla
+         */
+        function triggerFlashTransition() {
+            const flash = document.getElementById('flash-overlay');
+            flash.style.opacity = '1'; // Pantalla blanca
+            
+            // Justo cuando la pantalla está totalmente blanca (300ms), cambiamos la pantalla por detrás
+            setTimeout(() => {
+                nextScreen(1, 'title');
+                
+                // Quitamos el blanco rápido para revelar el fondo nevado
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                }, 100);
+            }, 300);
+        }
+
+        /**
+         * Maneja la transición de desvanecimiento entre pantallas
+         */
+        function nextScreen(current, next) {
+            const currentScreen = document.getElementById(`screen-${current}`);
+            const nextScreen = document.getElementById(`screen-${next}`);
+
+            currentScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentScreen.classList.remove('active');
+                nextScreen.classList.add('active');
+                
+                setTimeout(() => {
+                    nextScreen.style.opacity = '1';
+                    
+                    if (next === 'title') {
+                        startTitleAnimation();
+                    }
+
+                    // Celebración en la última pantalla (ahora es la 16)
+                    if (next === 16) {
+                        triggerCelebration();
+                    }
+                }, 50);
+            }, 800);
+        }
+
+        function startTitleAnimation() {
+            setTimeout(() => {
+                const logo = document.getElementById('logo-img');
+                if (logo) {
+                    logo.classList.add('animate-bounce-in');
+                    logo.style.opacity = '1';
+                }
+            }, 500); // A medio segundo salta el logo rebotando
+
+            setTimeout(() => {
+                const novio = document.getElementById('novio-img');
+                if (novio) novio.style.opacity = '1';
+            }, 1800); // Apareces tú a la izquierda
+
+            setTimeout(() => {
+                const novia = document.getElementById('novia-img');
+                if (novia) novia.style.opacity = '1';
+            }, 3100); // Aparece tu novia a la derecha
+
+            setTimeout(() => {
+                const text = document.getElementById('start-text');
+                if (text) {
+                    text.style.opacity = '1';
+                    text.classList.add('animate-blink-text');
+                }
+            }, 4400); // Y finalmente el texto parpadeante
+        }
+
+        /**
+         * Genera copos de nieve en el fondo al cargar la página
+         */
+        function createSnow() {
+            const snowContainer = document.getElementById('snow-container');
+            const flakes = ['❄', '❅', '❆'];
+            const numFlakes = 30; // Cantidad de copos
+
+            for (let i = 0; i < numFlakes; i++) {
+                const flake = document.createElement('div');
+                flake.classList.add('snowflake');
+                
+                // Selección aleatoria del tipo de copo
+                flake.innerText = flakes[Math.floor(Math.random() * flakes.length)];
+                
+                // Posición y tamaño aleatorio
+                flake.style.left = `${Math.random() * 100}vw`;
+                flake.style.fontSize = `${(Math.random() * 1) + 0.5}em`;
+                flake.style.opacity = Math.random();
+                
+                // Tiempos de animación aleatorios para que no caigan todos igual
+                const fallDuration = (Math.random() * 10) + 10; // entre 10s y 20s
+                const fallDelay = Math.random() * 10;
+                
+                flake.style.animationDuration = `${fallDuration}s, 3s`;
+                flake.style.animationDelay = `-${fallDelay}s, -${Math.random() * 3}s`;
+                
+                snowContainer.appendChild(flake);
+            }
+        }
+
+        /**
+         * Cambia la nieve por emojis de celebración en la pantalla final
+         */
+        function triggerCelebration() {
+            const snowContainer = document.getElementById('snow-container');
+            // Limpiamos la nieve
+            snowContainer.innerHTML = '';
+            
+            const emojis = ['❤️', '✨', '🥂', '🎉'];
+            const numEmojis = 40;
+
+            for (let i = 0; i < numEmojis; i++) {
+                const element = document.createElement('div');
+                element.classList.add('snowflake'); // Reutilizamos la animación de caída
+                
+                element.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                element.style.left = `${Math.random() * 100}vw`;
+                element.style.fontSize = `${(Math.random() * 1.5) + 1}em`;
+                
+                const fallDuration = (Math.random() * 5) + 5; 
+                element.style.animationDuration = `${fallDuration}s, 3s`;
+                
+                snowContainer.appendChild(element);
+            }
+        }
+
+        /**
+         * Efecto máquina de escribir para la terminal inicial
+         */
+        function typeWriter(text, elementId, delay, callback) {
+            const element = document.getElementById(elementId);
+            element.classList.add('cursor');
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, delay);
+                } else {
+                    element.classList.remove('cursor');
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        /**
+         * Secuencia de textos de la terminal
+         */
+        function startIntro() {
+            const speed = 40; // milisegundos por letra
+            const pause = 700; // pausa entre frases
+            
+            typeWriter("Hola, bienvenida.", "term-1", speed, () => {
+                setTimeout(() => {
+                    typeWriter("Te estarás preguntando que es todo esto, ¿verdad?", "term-2", speed, () => {
+                        setTimeout(() => {
+                            typeWriter("Antes de descubrirte esta parte del regalo tendremos que darle algo de tensión no? ;)", "term-3", speed, () => {
+                                setTimeout(() => {
+                                    typeWriter("Si quieres descubrir de que va esto vas a tener que descifrar la contraseña para avanzar", "term-4", speed, () => {
+                                        setTimeout(() => {
+                                            typeWriter("Te dejo una pequeña pregunta: ¿Si viniese un pequeño elfo a atacar a tu Gabrielín, ¿qué arma blanca usarías para protegerlo?", "term-5", speed, () => {
+                                                // Mostrar el input al terminar de escribir todo
+                                                const inputWrapper = document.getElementById('term-input-wrapper');
+                                                inputWrapper.classList.remove('hidden');
+                                                setTimeout(() => {
+                                                    inputWrapper.style.opacity = '1';
+                                                    document.getElementById('input-1').focus();
+                                                }, 50);
+                                            });
+                                        }, pause);
+                                    });
+                                }, pause);
+                            });
+                        }, pause);
+                    });
+                }, pause);
+            });
+        }
+
+        // Permitir usar la tecla 'Enter' para enviar la respuesta en cualquier pantalla
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    // Extraer ID paso a paso, asegurando que encuentra el num correcto incluso en IDs como "date-mission" (que no tienen checkAnswer pero no pasa nada)
+                    const idParts = this.id.split('-');
+                    if(idParts[1]) {
+                        const stepNum = idParts[1]; 
+                        const btn = document.querySelector(`button[onclick*="checkAnswer(${stepNum}"]`);
+                        if (btn) btn.click();
+                    }
+                }
+            });
+        });
+
+        // Iniciar la nieve de fondo y la intro de la terminal al cargar
+        window.onload = () => {
+            createSnow();
+            startIntro();
+        };
+
+    </script>
+</body>
+</html>
