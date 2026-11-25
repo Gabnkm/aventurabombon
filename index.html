@@ -2,654 +2,1535 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorpresa Navideña</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        serif: ['"Playfair Display"', 'serif'],
-                        sans: ['Montserrat', 'sans-serif'],
-                    },
-                    colors: {
-                        christmas: {
-                            red: '#991b1b',
-                            gold: '#d4af37',
-                            green: '#166534',
-                            dark: '#0f172a'
-                        }
-                    },
-                    animation: {
-                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'bounce-in': 'bounceIn 1s cubic-bezier(0.280, 0.840, 0.420, 1) forwards',
-                        'blink-text': 'blinkText 1.5s infinite'
-                    },
-                    keyframes: {
-                        shake: {
-                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
-                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
-                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
-                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
-                        },
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        bounceIn: {
-                            '0%': { transform: 'scale(0.3)', opacity: 0 },
-                            '50%': { transform: 'scale(1.05)', opacity: 1 },
-                            '70%': { transform: 'scale(0.9)' },
-                            '100%': { transform: 'scale(1)', opacity: 1 }
-                        },
-                        blinkText: {
-                            '0%, 100%': { opacity: 1 },
-                            '50%': { opacity: 0 }
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Bloquea el zoom automático y el reescalado en dispositivos móviles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aventura?</title>
+
+    <!-- Google Fonts: Playfair Display (títulos), Montserrat (cuerpo) y Fira Code (terminal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            /* Fondo de noche de invierno estrellada */
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: white;
-            overflow: hidden; /* Evita scroll por la nieve */
+        /* =====================================================================
+           VARIABLES PARA AJUSTAR FÁCILMENTE LAS 3 IMÁGENES PNG (PANTALLA 2)
+           - width: tamaño de cada imagen (en px o %)
+           - x: desplazamiento horizontal (negativo = izquierda, positivo = derecha)
+           - y: desplazamiento vertical (negativo = arriba, positivo = abajo)
+        ===================================================================== */
+        :root {
+            --logo-width: 280px;
+            --logo-x: 0px;
+            --logo-y: 0px;
+
+            --gabrielin-width: 150px;
+            --gabrielin-x: 0px;
+            --gabrielin-y: 0px;
+
+            --borobombon-width: 150px;
+            --borobombon-x: 0px;
+            --borobombon-y: 0px;
         }
 
-        /* Efecto Cristal (Glassmorphism) para las tarjetas */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
+        /* =====================================================================
+           1. RESET Y REGLAS ESTRICTAS ANTI-SCROLL / ANTI-ZOOM MÓVIL
+        ===================================================================== */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            max-width: 100vw;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            font-family: 'Montserrat', sans-serif;
+            color: #f8fafc;
+            background: linear-gradient(160deg, #0a0e1a 0%, #1a243d 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* =====================================================================
+           2. CANVAS FIJOS (NIEVE Y FUEGOS ARTIFICIALES) + FLASH BLANCO
+        ===================================================================== */
+        #snow-canvas,
+        #fireworks-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #fireworks-canvas {
+            z-index: 2;
+            display: none;
+        }
+
+        #white-flash {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100dvh;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 0.35s ease;
+        }
+
+        /* =====================================================================
+           3. BOTÓN FLOTANTE "VER MAPA" (PANTALLAS 4 A 15) Y TOAST DE GUARDADO
+        ===================================================================== */
+        #floating-map-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 40;
+            background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #f8fafc;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease, background 0.2s ease;
         }
 
-        /* Transiciones de pantalla */
+        #floating-map-btn.visible {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #floating-map-btn:active {
+            transform: scale(0.95);
+            background: rgba(251, 191, 36, 0.22);
+        }
+
+        #save-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            z-index: 90;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 222, 128, 0.45);
+            color: #4ade80;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            white-space: nowrap;
+        }
+
+        #save-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* =====================================================================
+           4. SISTEMA DE PANTALLAS (FLEXBOX CENTRADO)
+        ===================================================================== */
         .screen {
             display: none;
+            width: 100%;
+            min-height: 100dvh;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
             opacity: 0;
-            transition: opacity 0.8s ease-in-out;
+            transition: opacity 0.45s ease;
         }
+
         .screen.active {
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen.visible {
             opacity: 1;
         }
 
-        /* Nieve cayendo - CSS puro */
-        .snowflake {
-            position: absolute;
-            top: -10px;
-            color: #fff;
-            font-size: 1em;
-            font-family: Arial, sans-serif;
-            text-shadow: 0 0 5px rgba(255,255,255,0.3);
-            user-select: none;
-            z-index: 0;
-            animation-name: fall, shake;
-            animation-duration: 10s, 3s;
-            animation-timing-function: linear, ease-in-out;
-            animation-iteration-count: infinite, infinite;
-            animation-play-state: running, running;
+        /* Deja espacio arriba en pantallas con el botón flotante del mapa */
+        .screen.has-map-btn {
+            padding-top: 66px;
         }
-        @keyframes fall {
-            0% { top: -10% }
-            100% { top: 110% }
+
+        /* =====================================================================
+           5. PANTALLA 1: TERMINAL HACKER NEGRA (#000 / VERDE #4ade80)
+        ===================================================================== */
+        #screen-1 {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100dvh;
+            min-height: 100dvh;
+            background: #000000;
+            z-index: 50;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'Fira Code', monospace;
+            color: #4ade80;
+            justify-content: flex-start;
+            align-items: flex-start;
+            text-align: left;
+            word-break: break-word;
         }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) }
-            50% { transform: translateX(20px) }
+
+        .terminal-container {
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #4ade80;
         }
-        
-        /* Efecto de cursor parpadeante para la terminal */
-        .cursor::after {
+
+        .term-line {
+            margin: 0;
+            color: #4ade80;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .term-line:empty {
+            display: none;
+        }
+
+        .term-cursor::after {
             content: '█';
-            animation: blink 1s step-end infinite;
+            color: #4ade80;
             margin-left: 4px;
+            animation: blinkCursor 0.85s step-end infinite;
         }
-        @keyframes blink {
+
+        @keyframes blinkCursor {
             50% { opacity: 0; }
         }
-    </style>
-</head>
-<body class="h-screen w-full flex items-center justify-center font-sans antialiased relative">
 
-    <!-- Capa para el destello blanco (Flashazo) -->
-    <div id="flash-overlay" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-[100] transition-opacity duration-300"></div>
-
-    <!-- Contenedor de nieve generada por JS -->
-    <div id="snow-container" class="absolute inset-0 pointer-events-none"></div>
-
-    <!-- PANTALLA 1: TERMINAL (NUEVA PORTADA) -->
-    <div id="screen-1" class="screen active flex-col items-start justify-center w-full h-full p-6 z-50 bg-black absolute inset-0 text-left font-mono text-green-400 sm:text-lg text-sm">
-        <div class="w-full max-w-3xl mx-auto flex flex-col gap-4">
-            <p id="term-1"></p>
-            <p id="term-2"></p>
-            <p id="term-3"></p>
-            <p id="term-4"></p>
-            <p id="term-5"></p>
-            
-            <p id="term-6" class="mt-4 text-green-400"></p>
-            <p id="term-loading" class="text-green-400"></p>
-            <p id="term-7" class="text-green-400 mt-2"></p>
-            
-            <div id="term-input-wrapper" class="w-full relative mt-4 hidden opacity-0 transition-opacity duration-1000">
-                <div class="flex items-center w-full">
-                    <span class="mr-2">></span>
-                    <input type="text" id="input-1" autocomplete="off" class="w-full bg-transparent border-none outline-none text-green-400 font-mono focus:ring-0 caret-green-400">
-                </div>
-                <p id="error-1" class="text-red-500 text-sm mt-2 opacity-0 transition-opacity">Acceso denegado. Inténtalo de nuevo.</p>
-            </div>
-            <!-- Botón oculto que se activa con la tecla Enter -->
-            <button onclick="checkAnswer(1, 'piedra', 2)" class="hidden">Adivinar</button>
-        </div>
-    </div>
-
-    <!-- PANTALLA TÍTULO: INTRODUCCIÓN TIPO JUEGO -->
-    <div id="screen-title" class="screen w-full h-full flex flex-col items-center justify-center p-6 z-10 text-center cursor-pointer relative" onclick="nextScreen('title', 3)">
-        
-        <!-- REEMPLAZA 'URL_LOGO_AQUI' POR EL ENLACE A TU LOGO PNG SIN FONDO -->
-        <div class="absolute top-20 sm:top-32 w-full flex justify-center">
-            <img id="logo-img" src="URL_LOGO_AQUI" alt="Las aventuras de Borobombon con Gabrielín" class="h-40 sm:h-56 object-contain opacity-0 transform scale-50">
-        </div>
-        
-        <!-- Contenedor de las fotos (Sin marcos, imágenes PNG completas) -->
-        <div class="flex justify-between items-end w-full max-w-4xl px-4 absolute top-1/2 transform -translate-y-1/2 mt-16 sm:mt-24 pointer-events-none">
-            
-            <!-- REEMPLAZA 'URL_TU_FOTO_AQUI' POR EL ENLACE A TU FOTO PNG SIN FONDO -->
-            <img id="novio-img" src="URL_TU_FOTO_AQUI" alt="Gabrielín" class="w-32 h-auto max-h-64 sm:w-64 object-contain opacity-0 transition-opacity duration-1000">
-            
-            <!-- REEMPLAZA 'URL_FOTO_NOVIA_AQUI' POR EL ENLACE A LA FOTO DE TU NOVIA PNG SIN FONDO -->
-            <img id="novia-img" src="URL_FOTO_NOVIA_AQUI" alt="Borobombon" class="w-32 h-auto max-h-64 sm:w-64 object-contain opacity-0 transition-opacity duration-1000">
-        </div>
-
-        <!-- Texto parpadeante para continuar -->
-        <div id="start-text" class="absolute bottom-16 sm:bottom-20 w-full text-center text-white font-sans text-lg sm:text-xl tracking-widest opacity-0 uppercase font-light drop-shadow-md">
-            Pulse la pantalla para empezar
-        </div>
-    </div>
-
-    <!-- PANTALLA 3: HISTORIA INICIAL Y MAPA -->
-    <div id="screen-3" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-green-400 font-mono text-sm mb-2">MENSAJE ENCRIPTADO</span>
-            <h2 class="font-serif text-xl mb-4 leading-relaxed text-white">
-                "Atención Agente Borobombon. El Escuadrón Elfo ha tomado el control del mapa. Se te han asignado 5 misiones encubiertas por Madrid. Solo tu ingenio nos salvará."
-            </h2>
-            <!-- REEMPLAZA 'URL_MAPA_AQUI' POR TU MAPA -->
-            <div class="w-full h-40 bg-white/10 rounded-xl border border-white/20 mb-6 flex items-center justify-center overflow-hidden">
-                <img src="URL_MAPA_AQUI" alt="Mapa Misión" class="object-cover w-full h-full opacity-80" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <span class="text-gray-400 text-sm hidden absolute">Mapa Top Secret</span>
-            </div>
-            <button onclick="nextScreen(3, 4)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                Entendido, continuar
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 4: INSTRUCCIONES Y FECHA -->
-    <div id="screen-4" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Planificación táctica</span>
-            <p class="mb-6 text-white font-light">
-                Esta misión requiere luz diurna y alta movilidad. Selecciona la fecha de ejecución para sincronizar los sistemas.
-            </p>
-            <input type="date" id="date-mission" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all mb-6">
-            <button onclick="nextScreen(4, 5)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                Fijar fecha de misión
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 5: DIRECCIONES PRUEBA 1 -->
-    <div id="screen-5" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Fase 1: Abastecimiento</span>
-            <h2 class="font-serif text-2xl mb-6 leading-relaxed">
-                Coordenadas recibidas. Dirígete a la zona cero.
-            </h2>
-            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
-                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
-                <p class="text-white italic">"Es un lugar donde el oro líquido es negro y espumoso."</p>
-            </div>
-            <button onclick="nextScreen(5, 6)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                He llegado a la zona cero
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 6: PRUEBA 1 (DESAYUNO) -->
-    <div id="screen-6" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 1</span>
-            <p class="mb-6 text-white">Introduce el código visual que encontrarás en este local para verificar tu posición.</p>
-            <div class="w-full relative">
-                <input type="text" id="input-6" placeholder="Contraseña de la fase 1" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
-                <p id="error-6" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Código incorrecto. Revisa el entorno.</p>
-            </div>
-            <button onclick="checkAnswer(6, 'cafe', 7)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
-                Verificar
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 7: DIRECCIONES PRUEBA 2 -->
-    <div id="screen-7" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Fase 2: Infiltración</span>
-            <p class="mb-4 text-green-300 font-mono text-sm">Nivel de energía óptimo. Prepárate para moverte rápido, el tiempo corre en nuestra contra.</p>
-            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
-                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
-                <p class="text-white italic">"Busca el edificio donde la gente paga voluntariamente para ser encerrada."</p>
-            </div>
-            <button onclick="nextScreen(7, 8)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                He llegado al objetivo
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 8: PRUEBA 2 (ESCAPE ROOM) -->
-    <div id="screen-8" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 2</span>
-            <p class="mb-6 text-white">Los elfos han bloqueado el acceso. Introduce la clave que obtuviste al sobrevivir al encierro.</p>
-            <div class="w-full relative">
-                <input type="text" id="input-8" placeholder="Contraseña de salida" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
-                <p id="error-8" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Acceso denegado. Piensa mejor.</p>
-            </div>
-            <button onclick="checkAnswer(8, 'escape', 9)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
-                Hackear sistema
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 9: DIRECCIONES PRUEBA 3 -->
-    <div id="screen-9" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Fase 3: Punto de Extracción</span>
-            <p class="mb-4 text-green-300 font-mono text-sm">Increíble despliegue de intelecto. Los elfos están en retirada.</p>
-            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
-                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
-                <p class="text-white italic">"Busca el único lugar de Madrid donde puedes pisar arena de playa sin ver el mar."</p>
-            </div>
-            <button onclick="nextScreen(9, 10)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                Entrar al refugio
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 10: PRUEBA 3 (COMIDA) -->
-    <div id="screen-10" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 3</span>
-            <p class="mb-6 text-white">Confirma que estás en un perímetro seguro para reponer fuerzas.</p>
-            <div class="w-full relative">
-                <input type="text" id="input-10" placeholder="¿Qué pisas ahora mismo?" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
-                <p id="error-10" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Eso no suena a un refugio seguro.</p>
-            </div>
-            <button onclick="checkAnswer(10, 'arena', 11)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
-                Verificar
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 11: DESCANSO -->
-    <div id="screen-11" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <div class="text-4xl mb-4">☕🚶‍♀️</div>
-            <h2 class="font-serif text-2xl mb-4 text-christmas-gold">Tregua Temporal</h2>
-            <p class="text-white font-light mb-6">
-                Los niveles de alerta han bajado. Tienes permiso de la Agencia para un paseo recreativo de 60 minutos y consumo de cafeína libre por las calles del centro.
-            </p>
-            <button onclick="nextScreen(11, 12)" class="w-full bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                Continuar tras el descanso
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 12: DIRECCIONES PRUEBA 4 -->
-    <div id="screen-12" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Fase 4: Camuflaje</span>
-            <p class="mb-4 text-red-300 font-mono text-sm">La tregua ha terminado. Necesitamos que forjes un artefacto con tus propias manos.</p>
-            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
-                <p class="text-sm font-mono text-green-300">PISTA DE UBICACIÓN:</p>
-                <p class="text-white italic">"Dirígete al lugar donde el arte se funde con la cerámica para crear engaños perfectos."</p>
-            </div>
-            <button onclick="nextScreen(12, 13)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                Entrar al taller
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 13: PRUEBA 4 (TAZAS) -->
-    <div id="screen-13" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Desbloqueo Fase 4</span>
-            <p class="mb-6 text-white">¿Qué tipo de artefacto has fabricado para burlar a las patrullas elfas?</p>
-            <div class="w-full relative">
-                <input type="text" id="input-13" placeholder="Objeto fabricado" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
-                <p id="error-13" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Ese artefacto no servirá. Intenta de nuevo.</p>
-            </div>
-            <button onclick="checkAnswer(13, 'taza', 14)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
-                Registrar artefacto
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 14: DIRECCIONES PRUEBA 5 -->
-    <div id="screen-14" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Fase 5: La Fortaleza Final</span>
-            <p class="mb-4 text-green-300 font-mono text-sm">Artefacto asegurado. Queda la última parada para el asalto final.</p>
-            <div class="bg-black/30 p-4 rounded-xl mb-6 border border-white/10 w-full">
-                <p class="text-sm font-mono text-green-300">INSTRUCCIÓN TÁCTICA:</p>
-                <p class="text-white italic">"Solicita un vehículo de extracción de dos ruedas y cruza la ciudad hacia la base enemiga para la batalla final."</p>
-            </div>
-            <button onclick="nextScreen(14, 15)" class="w-full bg-christmas-gold text-christmas-dark hover:bg-yellow-400 font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg">
-                He llegado a la base
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 15: PRUEBA 5 (CENA) -->
-    <div id="screen-15" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center">
-            <span class="text-christmas-gold font-serif italic mb-2">Última Defensa Elfa</span>
-            <p class="mb-6 text-white">Para derrotar al Líder Elfo y recuperar tu regalo, debes reclamar la victoria dulce. ¿Qué momento marca el final del combate?</p>
-            <div class="w-full relative">
-                <input type="text" id="input-15" placeholder="El dulce final..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-christmas-gold text-center font-medium backdrop-blur-sm transition-all">
-                <p id="error-15" class="text-red-300 text-sm mt-2 opacity-0 transition-opacity">Aún no hemos terminado. Concéntrate.</p>
-            </div>
-            <button onclick="checkAnswer(15, 'postre', 16)" class="mt-4 bg-white text-christmas-dark hover:bg-gray-100 font-medium py-3 px-8 rounded-full transition-all duration-300 shadow-lg w-full">
-                Asestar Golpe Final
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA 16: FINAL (REVELACIÓN) -->
-    <div id="screen-16" class="screen flex-col items-center justify-center w-full max-w-md p-6 z-10 text-center">
-        <div class="glass-card p-8 rounded-3xl w-full flex flex-col items-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-christmas-gold/20 to-transparent pointer-events-none"></div>
-            
-            <div class="text-6xl mb-4 animate-pulse-slow">❤️🎄✨</div>
-            <h1 class="font-serif text-3xl sm:text-4xl font-semibold mb-4 text-christmas-gold leading-tight">
-                Misión Completada
-            </h1>
-            <p class="text-lg text-white font-light leading-relaxed mb-6">
-                Elfo derrotado. Madrid está a salvo y Gabrielín te quiere más que nunca.
-            </p>
-            <div class="text-2xl font-serif text-white">
-                ¡Feliz Navidad!
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- CONFIGURACIÓN DE RESPUESTAS ---
-        function normalizeString(str) {
-            return str
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "") // Quita tildes
-                .replace(/\s+/g, '');            // Quita espacios
+        #term-log {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        function checkAnswer(currentStep, correctAnswer, nextStep) {
-            const inputElement = document.getElementById(`input-${currentStep}`);
-            const errorElement = document.getElementById(`error-${currentStep}`);
-            const userAnswer = inputElement.value;
+        #term-log:empty {
+            display: none;
+        }
 
-            const normalizedUser = normalizeString(userAnswer);
-            const normalizedCorrect = normalizeString(correctAnswer);
-            
-            // Comprobación base o si incluye la palabra
-            let isCorrect = (normalizedUser === normalizedCorrect || normalizedUser.includes(normalizedCorrect));
+        .term-prompt-wrap {
+            display: none;
+            width: 100%;
+            margin-top: 4px;
+        }
 
-            if (isCorrect) {
-                // Ocultar error
-                errorElement.style.opacity = '0';
-                inputElement.classList.remove('animate-shake', 'border-red-400', 'bg-red-400/20');
-                
-                if (currentStep === 1) {
-                    startLoadingSequence();
-                } else {
-                    nextScreen(currentStep, nextStep);
-                }
-            } else {
-                // Mostrar error y animar input
-                errorElement.style.opacity = '1';
-                inputElement.classList.remove('animate-shake');
-                void inputElement.offsetWidth; // Trigger reflow
-                inputElement.classList.add('animate-shake', 'border-red-400', 'bg-red-400/20');
+        .term-prompt-wrap.show {
+            display: block;
+        }
+
+        /* Prompt limpio sin botón de enviar ni bordes */
+        .term-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .term-prompt-symbol {
+            color: #4ade80;
+            font-family: 'Fira Code', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .term-input {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #4ade80;
+            font-family: 'Fira Code', monospace;
+            font-size: 16px; /* Evita zoom automático en iOS */
+            caret-color: #4ade80;
+            padding: 4px 0;
+        }
+
+        .term-input::placeholder {
+            color: rgba(74, 222, 128, 0.4);
+            font-size: 14px;
+        }
+
+        /* =====================================================================
+           6. PANTALLA 2: PORTADA TIPO VIDEOJUEGO (PNG SIN MARCOS)
+        ===================================================================== */
+        #screen-2 {
+            justify-content: space-between;
+            padding: 36px 16px 40px;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+        }
+
+        .cover-top {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cover-characters {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 14px;
+            margin: 12px auto;
+        }
+
+        #img-logo {
+            width: var(--logo-width);
+            max-width: 90vw;
+            height: auto;
+            object-fit: contain;
+            opacity: 0;
+            transform: translate(var(--logo-x), var(--logo-y)) scale(0.3);
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+        }
+
+        #img-logo.bounce-in {
+            animation: bounceInLogo 0.95s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+        }
+
+        @keyframes bounceInLogo {
+            0% {
+                opacity: 0;
+                transform: translate(var(--logo-x), var(--logo-y)) scale(0.25);
+            }
+            55% {
+                opacity: 1;
+                transform: translate(var(--logo-x), var(--logo-y)) scale(1.08);
+            }
+            78% {
+                opacity: 1;
+                transform: translate(var(--logo-x), var(--logo-y)) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(var(--logo-x), var(--logo-y)) scale(1);
             }
         }
 
-        function startLoadingSequence() {
-            // Ocultar el input con un fundido rápido
-            const inputWrapper = document.getElementById('term-input-wrapper');
-            inputWrapper.style.transitionDuration = '500ms'; // Aceleramos el desvanecimiento del input
-            inputWrapper.style.opacity = '0';
-            
-            setTimeout(() => {
-                inputWrapper.classList.add('hidden');
-                
-                // Empezar a escribir la confirmación
-                typeWriter('Entrada correcta, empieza ejecución de operación "Regalo Borobombon"', 'term-6', 40, () => {
-                    setTimeout(() => {
-                        // Configurar el elemento de carga
-                        const loadingElement = document.getElementById('term-loading');
-                        loadingElement.classList.add('cursor');
-                        loadingElement.innerHTML = 'Cargando...... <span id="loading-pct">0</span>%';
-                        
-                        // Contador del 0 al 100% en aproximadamente 3 segundos
-                        let pct = 0;
-                        const interval = setInterval(() => {
-                            pct += Math.floor(Math.random() * 4) + 1; // Sube en saltos más pequeños (1 a 4)
-                            if (pct >= 100) {
-                                pct = 100;
-                                clearInterval(interval);
-                                document.getElementById('loading-pct').innerText = pct;
-                                loadingElement.classList.remove('cursor');
-                                
-                                // Esperar medio segundo al llegar al 100% y escribir texto final
-                                setTimeout(() => {
-                                    typeWriter("Carga correcto, iniciando...", "term-7", 40, () => {
-                                        // Llamar al flashazo tras escribir la frase
-                                        setTimeout(triggerFlashTransition, 400);
-                                    });
-                                }, 500);
-                            } else {
-                                document.getElementById('loading-pct').innerText = pct;
-                            }
-                        }, 75); // Velocidad del contador ajustada (75ms * ~40 pasos = 3 segundos)
-                    }, 400); // Pausa corta antes de empezar a cargar
-                });
-            }, 500);
+        #img-gabrielin {
+            width: var(--gabrielin-width);
+            max-width: 44vw;
+            height: auto;
+            object-fit: contain;
+            opacity: 0;
+            transform: translate(var(--gabrielin-x), calc(var(--gabrielin-y) + 28px)) scale(0.75);
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+        }
+
+        #img-gabrielin.bounce-in {
+            animation: bounceInGab 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+        }
+
+        @keyframes bounceInGab {
+            0% {
+                opacity: 0;
+                transform: translate(var(--gabrielin-x), calc(var(--gabrielin-y) + 30px)) scale(0.7);
+            }
+            60% {
+                opacity: 1;
+                transform: translate(var(--gabrielin-x), calc(var(--gabrielin-y) - 6px)) scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(var(--gabrielin-x), var(--gabrielin-y)) scale(1);
+            }
+        }
+
+        #img-borobombon {
+            width: var(--borobombon-width);
+            max-width: 44vw;
+            height: auto;
+            object-fit: contain;
+            opacity: 0;
+            transform: translate(var(--borobombon-x), calc(var(--borobombon-y) + 28px)) scale(0.75);
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+        }
+
+        #img-borobombon.bounce-in {
+            animation: bounceInBoro 0.85s cubic-bezier(0.28, 0.84, 0.42, 1) forwards;
+        }
+
+        @keyframes bounceInBoro {
+            0% {
+                opacity: 0;
+                transform: translate(var(--borobombon-x), calc(var(--borobombon-y) + 30px)) scale(0.7);
+            }
+            60% {
+                opacity: 1;
+                transform: translate(var(--borobombon-x), calc(var(--borobombon-y) - 6px)) scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(var(--borobombon-x), var(--borobombon-y)) scale(1);
+            }
+        }
+
+        .img-fallback {
+            display: none;
+            padding: 12px 18px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px dashed rgba(251, 191, 36, 0.5);
+            color: #fef08a;
+            font-family: 'Playfair Display', serif;
+            font-size: 14px;
+        }
+
+        .cover-tap-prompt {
+            font-size: 15px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #fef08a;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .cover-tap-prompt.blink {
+            opacity: 1;
+            animation: softBlink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes softBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.25; }
+        }
+
+        /* =====================================================================
+           7. TARJETAS GLASSMORPHISM (PANTALLA 0 Y PANTALLAS 3 A 16)
+        ===================================================================== */
+        .glass-card {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 22px;
+            padding: 26px 22px;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+            animation: cardFadeUp 0.45s ease forwards;
+        }
+
+        @keyframes cardFadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .badge {
+            display: inline-block;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.14);
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            padding: 5px 12px;
+            border-radius: 999px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 25px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 12px;
+            line-height: 1.25;
+        }
+
+        .card-text {
+            font-size: 14.5px;
+            line-height: 1.65;
+            color: #e2e8f0;
+            margin: 0 0 18px;
+            font-weight: 300;
+        }
+
+        .info-pill {
+            display: inline-block;
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.35);
+            color: #86efac;
+            font-family: 'Fira Code', monospace;
+            font-size: 12.5px;
+            padding: 7px 14px;
+            border-radius: 12px;
+            margin: 0 0 16px;
+        }
+
+        .save-summary-box {
+            background: rgba(0, 0, 0, 0.34);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 0 20px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .save-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+        }
+
+        .save-label {
+            color: #94a3b8;
+        }
+
+        .save-value {
+            color: #f8fafc;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .clue-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 14px;
+            padding: 15px;
+            margin: 0 0 18px;
+            text-align: left;
+        }
+
+        .clue-label {
+            display: block;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: #4ade80;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .clue-text {
+            margin: 0;
+            font-size: 14.5px;
+            line-height: 1.55;
+            color: #f8fafc;
+            font-style: italic;
+        }
+
+        /* =====================================================================
+           8. MAPA PROGRESIVO (PANTALLA 3)
+        ===================================================================== */
+        .mission-map {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            margin: 0 0 18px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .map-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            text-align: left;
+            font-family: 'Montserrat', sans-serif;
+            transition: transform 0.15s ease, background 0.2s ease;
+        }
+
+        .map-item.unlocked {
+            cursor: pointer;
+            background: rgba(251, 191, 36, 0.12);
+            border-color: rgba(251, 191, 36, 0.38);
+        }
+
+        .map-item.unlocked:active {
+            transform: scale(0.98);
+        }
+
+        .map-item.completed {
+            cursor: pointer;
+            background: rgba(74, 222, 128, 0.11);
+            border-color: rgba(74, 222, 128, 0.36);
+        }
+
+        .map-item.locked {
+            cursor: not-allowed;
+            opacity: 0.56;
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(255, 255, 255, 0.07);
+        }
+
+        .map-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .map-text-col {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .map-title {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+
+        .map-item.locked .map-title {
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            font-weight: 400;
+            color: #94a3b8;
+        }
+
+        .map-sub {
+            display: block;
+            font-size: 11.5px;
+            color: #cbd5e1;
+            margin-top: 2px;
+        }
+
+        .map-status {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* =====================================================================
+           9. INPUTS (16PX) Y BOTONES
+        ===================================================================== */
+        .input-group {
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 13px 16px;
+            font-size: 16px; /* Crítico para evitar zoom automático en iPhone */
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 12px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .field-input::placeholder {
+            color: rgba(226, 232, 240, 0.6);
+        }
+
+        .field-input:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .field-input.input-error {
+            border-color: #f87171;
+            background: rgba(248, 113, 113, 0.2);
+            animation: shake 0.45s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        input[type="date"].field-input {
+            color-scheme: dark;
+            cursor: pointer;
+        }
+
+        .error-msg {
+            color: #fca5a5;
+            font-size: 13px;
+            margin: 8px 0 0;
+            min-height: 18px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .error-msg.show {
+            opacity: 1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 999px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            color: #0f172a;
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-light {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .hero-emoji {
+            font-size: 46px;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: floatSoft 3s ease-in-out infinite;
+        }
+
+        @keyframes floatSoft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-7px); }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(3px); }
+            30%, 50%, 70% { transform: translateX(-5px); }
+            40%, 60% { transform: translateX(5px); }
+        }
+
+	.countdown-grid {
+	  display: grid;
+	  grid-template-columns: repeat(4, 1fr);
+	  gap: 8px;
+	  margin: 20px 0;
+	}
+
+	.countdown-box {
+	  background: rgba(255, 255, 255, 0.1);
+	  border: 1px solid rgba(255, 255, 255, 0.2);
+	  border-radius: 12px;
+	  padding: 12px 4px;
+	  text-align: center;
+	}
+
+	.countdown-box span {
+	  display: block;
+	  font-size: 1.6rem;
+	  font-weight: bold;
+	  color: #4ade80;
+	}
+	
+	.countdown-box small {
+	  font-size: 0.7rem;
+	  text-transform: uppercase;
+	  opacity: 0.8;
+	}
+
+	.btn-locked {
+	  opacity: 0.5;
+	  cursor: not-allowed;
+	  filter: grayscale(1);
+	}
+
+    </style>
+</head>
+<body>
+
+    <!-- Destello blanco de transición desde la terminal -->
+    <div id="white-flash"></div>
+
+    <!-- Canvas fijos para la nieve y los fuegos artificiales finales -->
+    <canvas id="snow-canvas"></canvas>
+    <canvas id="fireworks-canvas"></canvas>
+
+    <!-- Botón flotante para ir al mapa (visible en pantallas 4 a 15) -->
+    <button type="button" id="floating-map-btn" onclick="openMapFromMission()">
+        🗺️ Ver Mapa
+    </button>
+
+    <!-- Notificación discreta de autoguardado -->
+    <div id="save-toast" role="status" aria-live="polite">💾 Progreso guardado</div>
+
+    <!-- =====================================================================
+         PANTALLA 0: PARTIDA GUARDADA DETECTADA (LOCALSTORAGE)
+    ===================================================================== -->
+    <section id="screen-continue" class="screen" aria-label="Partida guardada">
+        <div class="glass-card">
+            <div class="hero-emoji">💾✨</div>
+            <span class="badge">Archivo de Guardado</span>
+            <h1 class="card-title">Partida Guardada Detectada</h1>
+            <p class="card-text">
+                ¡Bienvenida de nuevo, Agente Borobombon! Hemos recuperado tu progreso en la Operación Madrid.
+            </p>
+
+            <div class="save-summary-box">
+                <div class="save-row">
+                    <span class="save-label">Fase actual:</span>
+                    <span id="saved-phase-label" class="save-value">Fase 0</span>
+                </div>
+                <div class="save-row">
+                    <span class="save-label">Fecha elegida:</span>
+                    <span id="saved-date-label" class="save-value">Sin elegir</span>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-gold" onclick="continueSavedGame()">
+                ▶ Continuar Partida
+            </button>
+            <button type="button" class="btn btn-outline" onclick="goToTerminalFromContinue()">
+                💻 Ir a la Terminal (Inicio)
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 1: TERMINAL / PRE-PORTADA
+    ===================================================================== -->
+    <section id="screen-1" class="screen" aria-label="Terminal de acceso">
+        <div class="terminal-container">
+            <p id="term-1" class="term-line"></p>
+            <p id="term-2" class="term-line"></p>
+            <p id="term-3" class="term-line"></p>
+            <p id="term-4" class="term-line"></p>
+            <p id="term-5" class="term-line"></p>
+
+            <!-- Historial de mensajes de la terminal (errores o comando reiniciar) -->
+            <div id="term-log"></div>
+
+            <!-- Prompt limpio sin botón de enviar (valida al pulsar Intro / Ir) -->
+            <div id="term-prompt-wrap" class="term-prompt-wrap">
+                <form id="term-form" onsubmit="handleTerminalSubmit(event)">
+                    <div class="term-input-row">
+                        <span class="term-prompt-symbol">&gt;</span>
+                        <input
+                            type="text"
+                            id="terminal-input"
+                            class="term-input"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            enterkeyhint="go"
+                            placeholder="escribe aquí y pulsa Intro..."
+                        >
+                    </div>
+                </form>
+            </div>
+
+            <!-- Secuencia de carga tras acertar -->
+            <p id="term-success" class="term-line"></p>
+            <p id="term-loading" class="term-line"></p>
+            <p id="term-final" class="term-line"></p>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 2: PORTADA / TITLE SCREEN (PNG SIN MARCOS)
+    ===================================================================== -->
+    <section id="screen-2" class="screen" onclick="handleCoverTap()">
+        <div class="cover-top">
+            <img
+                id="img-logo"
+                src="img/logo.png"
+                alt="Las aventuras de Borobombon con Gabrielín"
+                onerror="this.style.display='none'; document.getElementById('fb-logo').style.display='inline-block';"
+            >
+            <div id="fb-logo" class="img-fallback">✨ Las aventuras de Borobombon con Gabrielín ✨</div>
+        </div>
+
+        <div class="cover-characters">
+            <img
+                id="img-gabrielin"
+                src="img/gabrielin.png"
+                alt="Gabrielín"
+                onerror="this.style.display='none'; document.getElementById('fb-gab').style.display='inline-block';"
+            >
+            <div id="fb-gab" class="img-fallback">Gabrielín</div>
+
+            <img
+                id="img-borobombon"
+                src="img/borobombon.png"
+                alt="Borobombon"
+                onerror="this.style.display='none'; document.getElementById('fb-boro').style.display='inline-block';"
+            >
+            <div id="fb-boro" class="img-fallback">Borobombon</div>
+        </div>
+
+        <div id="cover-tap-prompt" class="cover-tap-prompt">
+            Pulse la pantalla para empezar
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 3: HISTORIA INICIAL Y MAPA PROGRESIVO
+    ===================================================================== -->
+    <section id="screen-3" class="screen">
+        <div class="glass-card">
+            <span class="badge">Expediente Top Secret</span>
+            <h1 class="card-title">Mapa de la Misión</h1>
+            <p class="card-text">
+                Atención Agente Borobombon. El Escuadrón Elfo ha tomado el control de Madrid. Deberás superar 5 misiones encubiertas junto a Gabrielín para recuperar tu regalo definitivo.
+            </p>
+
+            <!-- Muestra la fecha elegida si ya fue seleccionada -->
+            <div id="map-date-pill" class="info-pill" style="display: none;"></div>
+
+            <!-- Lista de fases generada dinámicamente según unlockedPhase -->
+            <div id="mission-map-list" class="mission-map"></div>
+
+            <!-- Botón principal hacia la fase activa -->
+            <button type="button" id="btn-map-primary" class="btn btn-gold" onclick="goToPrimaryMissionScreen()">
+                Comenzar Fase 0
+            </button>
+
+            <!-- Botón para volver a la pantalla exacta de misión si venía de pantallas 4..15 -->
+            <button type="button" id="btn-map-return" class="btn btn-outline" style="display: none;" onclick="returnToMissionScreen()">
+                ↩ Volver a mi misión actual
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 4: INSTRUCCIONES Y ELECCIÓN DE DÍA (FASE 0)
+    ===================================================================== -->
+    <section id="screen-4" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 0 · Planificación</span>
+            <h2 class="card-title">Elige el día de la misión</h2>
+            <p class="card-text">
+                Esta misión requiere luz diurna, alta movilidad y ganas de recorrer Madrid todo el día. Selecciona la fecha de ejecución para desbloquear la Fase 1.
+            </p>
+
+            <div class="input-group">
+                <input type="date" id="mission-date" class="field-input" aria-label="Elegir fecha de la misión">
+            </div>
+
+            <div id="date-formatted-pill" class="info-pill" style="display: none;"></div>
+
+            <!-- CAMBIO AQUÍ: ahora apunta a '4b' -->
+            <button type="button" id="btn-date-continue" class="btn btn-gold" disabled onclick="goToScreen('4b')">
+                Confirmar fecha y activar cuenta atrás
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 4B: CUENTA ATRÁS
+    ===================================================================== -->
+    <section id="screen-4b" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 0 · Cuenta Atrás</span>
+            <h2 class="card-title">⏳ Misión Programada</h2>
+            <p class="card-text">
+                Fecha de ejecución confirmada: <strong id="fecha-elegida-texto"></strong>.<br>
+                El protocolo se desbloqueará automáticamente cuando el contador llegue a cero.
+            </p>
+
+            <div class="countdown-grid">
+                <div class="countdown-box"><span id="cd-days">00</span><small>Días</small></div>
+                <div class="countdown-box"><span id="cd-hours">00</span><small>Horas</small></div>
+                <div class="countdown-box"><span id="cd-mins">00</span><small>Min</small></div>
+                <div class="countdown-box"><span id="cd-secs">00</span><small>Seg</small></div>
+            </div>
+
+            <button type="button" id="btn-desbloquear-mision" class="btn btn-gold btn-locked" disabled onclick="unlockedPhase = Math.max(unlockedPhase, 1); goToScreen(5)">
+                🔒 Esperando al gran día...
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 5: DIRECCIONES A PRUEBA 1 (DESAYUNO)
+    ===================================================================== -->
+    <section id="screen-5" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 1 · Coordenadas</span>
+            <h2 class="card-title">Misión de Abastecimiento</h2>
+            <div class="clue-box">
+                <span class="clue-label">Pista de ubicación</span>
+                <p class="clue-text">
+                    "Dirígete a la zona cero para recargar fuerzas. Pista: es un lugar donde el oro líquido es negro y espumoso."
+                </p>
+            </div>
+            <p class="card-text">
+                Sigue las indicaciones de Gabrielín hasta el primer destino. Cuando estéis sentados, pulsa para abrir la prueba.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(6)">
+                Ya estamos aquí
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 6: PRUEBA 1 (DESAYUNO) - CONTRASEÑA POR DEFECTO: "cafe"
+    ===================================================================== -->
+    <section id="screen-6" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Prueba 1 · Desayuno</span>
+            <h2 class="card-title">Combustible de Élite</h2>
+            <p class="card-text">
+                ¡Bienvenida al primer refugio! Para superar la Fase 1 y desbloquear las siguientes coordenadas, introduce el nombre del oro líquido que da energía a toda agente especial.
+            </p>
+            <div class="input-group">
+                <input type="text" id="input-6" class="field-input" placeholder="Escribe la contraseña..." autocomplete="off" enterkeyhint="go">
+                <p id="error-6" class="error-msg">Contraseña incorrecta. Pista: huele increíble por la mañana.</p>
+            </div>
+            <button type="button" class="btn btn-light" onclick="checkPassword(6)">
+                Comprobar Contraseña
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 7: CONTINUAR Y DIRECCIONES A PRUEBA 2 (ESCAPE ROOM)
+    ===================================================================== -->
+    <section id="screen-7" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 1 Completada</span>
+            <h2 class="card-title">Rumbo a la Infiltración</h2>
+            <div class="clue-box">
+                <span class="clue-label">Siguiente objetivo</span>
+                <p class="clue-text">
+                    "Los elfos han bloqueado el acceso a la siguiente pista. Busca el edificio donde la gente paga para ser encerrada."
+                </p>
+            </div>
+            <p class="card-text">
+                Nivel de energía óptimo. El tiempo corre en nuestra contra: dirigíos al punto de infiltración.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(8)">
+                Hemos llegado al destino
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 8: PRUEBA 2 (ESCAPE ROOM) - CONTRASEÑA POR DEFECTO: "escapar"
+    ===================================================================== -->
+    <section id="screen-8" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Prueba 2 · Escape Room</span>
+            <h2 class="card-title">Hackeo del Sistema Elfo</h2>
+            <p class="card-text">
+                Tenéis 60 minutos para superar el desafío mental de los elfos. Al terminar, escribe el verbo que resume vuestro objetivo dentro de la sala para desbloquear la Fase 3.
+            </p>
+            <div class="input-group">
+                <input type="text" id="input-8" class="field-input" placeholder="Escribe la contraseña..." autocomplete="off" enterkeyhint="go">
+                <p id="error-8" class="error-msg">Código erróneo. Pista: ¿qué tenéis que hacer para salir?</p>
+            </div>
+            <button type="button" class="btn btn-light" onclick="checkPassword(8)">
+                Desbloquear Fase 3
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 9: CONTINUAR Y DIRECCIONES A PRUEBA 3 (COMIDA)
+    ===================================================================== -->
+    <section id="screen-9" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 2 Completada</span>
+            <h2 class="card-title">¡Fuga Exitosa!</h2>
+            <div class="clue-box">
+                <span class="clue-label">Punto de extracción</span>
+                <p class="clue-text">
+                    "Los elfos están en retirada. Busca el único lugar de Madrid donde puedes pisar arena de playa sin ver el mar."
+                </p>
+            </div>
+            <p class="card-text">
+                Increíble despliegue de intelecto. Poned rumbo al refugio secreto para celebrar y comer algo rico.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(10)">
+                Ya estamos en el refugio
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 10: PRUEBA 3 (COMIDA) - CONTRASEÑA POR DEFECTO: "arena"
+    ===================================================================== -->
+    <section id="screen-10" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Prueba 3 · Comida</span>
+            <h2 class="card-title">Confirmar Extracción</h2>
+            <p class="card-text">
+                Estáis en un lugar seguro donde los elfos no pueden entrar. Para validar vuestra posición y desbloquear la siguiente etapa, escribe qué es lo más playero que tenéis bajo los pies.
+            </p>
+            <div class="input-group">
+                <input type="text" id="input-10" class="field-input" placeholder="Escribe la contraseña..." autocomplete="off" enterkeyhint="go">
+                <p id="error-10" class="error-msg">No coincide. Mira bien hacia el suelo...</p>
+            </div>
+            <button type="button" class="btn btn-light" onclick="checkPassword(10)">
+                Confirmar Posición
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 11: DESCANSO, CAFÉ Y PASEÍTO
+    ===================================================================== -->
+    <section id="screen-11" class="screen has-map-btn">
+        <div class="glass-card">
+            <div class="hero-emoji">☕❄️</div>
+            <span class="badge">Tregua de la Agencia</span>
+            <h2 class="card-title">Paseíto y Café</h2>
+            <p class="card-text">
+                Los niveles de alerta han bajado. Tienes permiso oficial de la Agencia para 60 minutos de paseo recreativo y consumo de cafeína libre por las calles navideñas de Madrid junto a Gabrielín.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(12)">
+                Fin del descanso, continuar
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 12: CONTINUAR Y DIRECCIONES A PRUEBA 4 (PINTAR TAZAS)
+    ===================================================================== -->
+    <section id="screen-12" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 4 · Alerta Reactivada</span>
+            <h2 class="card-title">Misión de Artesanía</h2>
+            <div class="clue-box">
+                <span class="clue-label">Nueva orden</span>
+                <p class="clue-text">
+                    "La tregua ha terminado. Necesitamos que pongas a prueba tu pulso y creatividad para forjar un artefacto con tus propias manos."
+                </p>
+            </div>
+            <p class="card-text">
+                Dirigíos al taller secreto. Cuando estéis listos con pinceles en mano, pulsa para entrar en la prueba.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(13)">
+                Ya estamos en el taller
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 13: PRUEBA 4 (PINTAR TAZAS) - CONTRASEÑA POR DEFECTO: "taza"
+    ===================================================================== -->
+    <section id="screen-13" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Prueba 4 · Pintar Tazas</span>
+            <h2 class="card-title">Forja el Artefacto</h2>
+            <p class="card-text">
+                Crea una obra maestra única para engañar al líder del Escuadrón Elfo. Al terminar, escribe el nombre del objeto que has pintado para registrarlo y desbloquear la Fase 5.
+            </p>
+            <div class="input-group">
+                <input type="text" id="input-13" class="field-input" placeholder="Nombre del artefacto..." autocomplete="off" enterkeyhint="go">
+                <p id="error-13" class="error-msg">Artefacto desconocido. Pista: sirve para tomar café o té.</p>
+            </div>
+            <button type="button" class="btn btn-light" onclick="checkPassword(13)">
+                Registrar Artefacto
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 14: DIRECCIONES A PRUEBA 5 (CENA EN MOTO/BICI)
+    ===================================================================== -->
+    <section id="screen-14" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Fase 5 · Extracción Rápida</span>
+            <h2 class="card-title">La Fortaleza Final</h2>
+            <div class="clue-box">
+                <span class="clue-label">Instrucción de transporte</span>
+                <p class="clue-text">
+                    "Artefacto asegurado. Solicita un vehículo de extracción (moto o bici) para cruzar la ciudad hacia la base enemiga."
+                </p>
+            </div>
+            <p class="card-text">
+                Último desplazamiento de la jornada bajo las luces de Madrid. Cuando lleguéis al restaurante, pulsa para la batalla final.
+            </p>
+            <button type="button" class="btn btn-gold" onclick="goToScreen(15)">
+                Hemos llegado a la base
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 15: PRUEBA 5 (CENA FINAL) - CONTRASEÑA POR DEFECTO: "navidad"
+    ===================================================================== -->
+    <section id="screen-15" class="screen has-map-btn">
+        <div class="glass-card">
+            <span class="badge">Prueba 5 · Cena Final</span>
+            <h2 class="card-title">El Último Código</h2>
+            <p class="card-text">
+                Disfruta de la cena en la fortaleza final. Al llegar a los postres, introduce la palabra mágica de esta época del año para derrotar definitivamente al Escuadrón Elfo.
+            </p>
+            <div class="input-group">
+                <input type="text" id="input-15" class="field-input" placeholder="Código final..." autocomplete="off" enterkeyhint="go">
+                <p id="error-15" class="error-msg">Casi lo tienes... ¿qué fiesta estamos celebrando?</p>
+            </div>
+            <button type="button" class="btn btn-gold" onclick="checkPassword(15)">
+                Completar Misión
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         PANTALLA 16: FINAL DE LA HISTORIA Y FUEGOS ARTIFICIALES
+    ===================================================================== -->
+    <section id="screen-16" class="screen">
+        <div class="glass-card">
+            <div class="hero-emoji">🎄❤️🎆</div>
+            <span class="badge">Misión Completada</span>
+            <h1 class="card-title">¡Misión Completada!</h1>
+            <p class="card-text">
+                Elfo derrotado. Madrid está a salvo y Gabrielín te quiere más que nunca. ¡Feliz Navidad, Borobombon!
+            </p>
+
+            <div id="finale-date-pill" class="info-pill" style="display: none;"></div>
+
+            <button type="button" class="btn btn-outline" onclick="goToScreen(3)">
+                🗺️ Ver Mapa Completo
+            </button>
+        </div>
+    </section>
+
+    <script>
+        /* =====================================================================
+           CONFIGURACIÓN FÁCIL DE EDITAR: ATAJOS Y CONTRASEÑAS
+        ===================================================================== */
+
+        // 1) ATAJOS SECRETOS EN LA TERMINAL (Pantalla 1)
+        // Escribe cualquiera de estas palabras en la terminal para saltar directamente.
+        // También existe el comando especial 'reiniciar' para borrar la partida guardada.
+        const ATAJOS_FASE = {
+            saltar0:   { screen: 4,  phase: 0 }, // Elección de día (Fase 0)
+            patata:    { screen: 6,  phase: 1 }, // Prueba 1: Desayuno
+            croqueta:  { screen: 8,  phase: 2 }, // Prueba 2: Escape Room
+            alcachofa: { screen: 10, phase: 3 }, // Prueba 3: Comida
+            pinguino:  { screen: 13, phase: 4 }, // Prueba 4: Pintar Tazas
+            tiramisu:  { screen: 15, phase: 5 }, // Prueba 5: Cena Final
+            mapa:      { screen: 3,  phase: 0 }  // Mapa de la Misión
+        };
+
+        // 2) CONTRASEÑA PRINCIPAL DE LA TERMINAL (Pantalla 1)
+        const TERMINAL_PASSWORD = 'piedra';
+
+        // 3) CONTRASEÑAS DE LAS 5 PRUEBAS (Pantallas 6, 8, 10, 13 y 15)
+        // Edita el campo 'password' con la respuesta que quieras (ignora mayúsculas y tildes).
+        const MISSION_PASSWORDS = {
+            6:  { password: 'cafe',    nextScreen: 7,  unlockPhase: 2 },
+            8:  { password: 'escapar', nextScreen: 9,  unlockPhase: 3 },
+            10: { password: 'arena',   nextScreen: 11, unlockPhase: 4 },
+            13: { password: 'taza',    nextScreen: 14, unlockPhase: 5 },
+            15: { password: 'navidad', nextScreen: 16, unlockPhase: 6 }
+        };
+
+        // 4) DEFINICIÓN DE LAS FASES DEL MAPA PROGRESIVO (Pantalla 3)
+        const MAP_PHASES = [
+            { id: 0, title: 'Fase 0: Elegir día para ejecutar misión', icon: '📅', screen: 4 },
+            { id: 1, title: 'Fase 1: Misión de Abastecimiento (Desayuno)', icon: '☕', screen: 5 },
+            { id: 2, title: 'Fase 2: Infiltración (Escape Room)', icon: '🗝️', screen: 7 },
+            { id: 3, title: 'Fase 3: Punto de Extracción (Comida)', icon: '🏖️', screen: 9 },
+            { id: 4, title: 'Fase 4: Misión de Artesanía (Pintar Tazas)', icon: '🎨', screen: 12 },
+            { id: 5, title: 'Fase 5: La Fortaleza Final (Cena)', icon: '🍽️', screen: 14 }
+        ];
+
+        /* =====================================================================
+           ESTADO GLOBAL Y SISTEMA DE GUARDADO AUTOMÁTICO (LOCALSTORAGE)
+        ===================================================================== */
+        const SAVE_KEY = 'partida_borobombon';
+
+        let currentScreen = 1;       // Pantalla actualmente visible (0 = screen-continue, 1..16 = pantallas)
+        let lastMissionScreen = 3;   // Última pantalla de misión (>= 4) para botón "Volver" desde el mapa
+        let unlockedPhase = 0;       // Fase más alta desbloqueada (0..6)
+        let chosenDate = '';         // Fecha elegida (YYYY-MM-DD)
+
+        let coverReadyToTap = false;
+        let terminalBusy = false;
+        let terminalInitialized = false;
+        let toastTimeout = null;
+
+        /**
+         * Lee la partida guardada de localStorage con manejo de errores.
+         */
+
+	function isMissionScreen(s) {
+            return s === '4b' || (typeof s === 'number' && s >= 4 && s <= 15);
+        }
+
+        function loadSavedGame() {
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (parsed && (typeof parsed.screen === 'number' || parsed.screen === '4b')) {
+                    return {
+                        screen: parsed.screen,
+                        unlockedPhase: Number(parsed.unlockedPhase) || 0,
+                        chosenDate: typeof parsed.chosenDate === 'string' ? parsed.chosenDate : ''
+                    };
+                }
+            } catch (err) {
+                console.warn('No se pudo leer localStorage:', err);
+            }
+            return null;
         }
 
         /**
-         * Activa el destello blanco antes de cambiar de pantalla
+         * Guarda automáticamente el progreso en localStorage y muestra un toast discreto.
          */
-        function triggerFlashTransition() {
-            const flash = document.getElementById('flash-overlay');
-            flash.style.opacity = '1'; // Pantalla blanca
-            
-            // Justo cuando la pantalla está totalmente blanca (300ms), cambiamos la pantalla por detrás
+        function saveGameProgress(screenNum, showNotification = true) {
+            if (screenNum !== '4b' && (typeof screenNum !== 'number' || screenNum < 3)) return;
+            const saveObj = {
+                screen: screenNum,
+                unlockedPhase: unlockedPhase,
+                chosenDate: chosenDate
+            };
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(saveObj));
+                if (showNotification) showSaveToast();
+            } catch (err) {
+                console.warn('No se pudo guardar en localStorage:', err);
+            }
+        }
+
+        /**
+         * Borra completamente la partida guardada.
+         */
+        function clearSavedGame() {
+            try {
+                localStorage.removeItem(SAVE_KEY);
+            } catch (err) {
+                console.warn('No se pudo borrar localStorage:', err);
+            }
+            unlockedPhase = 0;
+            chosenDate = '';
+            lastMissionScreen = 3;
+            const dateInput = document.getElementById('mission-date');
+            if (dateInput) dateInput.value = '';
+            const datePill = document.getElementById('date-formatted-pill');
+            if (datePill) datePill.style.display = 'none';
+            const btnDate = document.getElementById('btn-date-continue');
+            if (btnDate) btnDate.disabled = true;
+        }
+
+        /**
+         * Muestra brevemente la notificación "💾 Progreso guardado".
+         */
+        function showSaveToast() {
+            const toast = document.getElementById('save-toast');
+            if (!toast) return;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        /**
+         * Formatea una fecha YYYY-MM-DD a español elegante (ej: "27 de diciembre de 2026").
+         */
+        function formatDateSpanish(isoDate) {
+            if (!isoDate || !isoDate.includes('-')) return 'Sin elegir';
+            const parts = isoDate.split('-');
+            if (parts.length !== 3) return isoDate;
+            const year = parseInt(parts[0], 10);
+            const monthIndex = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            const months = [
+                'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+            ];
+            if (monthIndex < 0 || monthIndex > 11 || isNaN(day) || isNaN(year)) return isoDate;
+            return `${day} de ${months[monthIndex]} de ${year}`;
+        }
+
+        /**
+         * Normaliza cadenas: minúsculas, sin tildes y sin espacios al inicio/fin.
+         */
+        function normalizeText(str) {
+            return String(str || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        /* =====================================================================
+           PANTALLA 0: CONTINUAR PARTIDA GUARDADA
+        ===================================================================== */
+        function showContinueScreen(saved) {
+            const phaseLabel = document.getElementById('saved-phase-label');
+            const dateLabel = document.getElementById('saved-date-label');
+
+            if (phaseLabel) {
+                phaseLabel.textContent = saved.unlockedPhase >= 6
+                    ? 'Misión Completada (Fase 6)'
+                    : `Fase ${saved.unlockedPhase}`;
+            }
+            if (dateLabel) {
+                dateLabel.textContent = saved.chosenDate
+                    ? formatDateSpanish(saved.chosenDate)
+                    : 'Sin elegir';
+            }
+
+            currentScreen = 0;
+            const el = document.getElementById('screen-continue');
+            el.classList.add('active', 'visible');
+            updateFloatingMapButton(0);
+        }
+
+        function continueSavedGame() {
+            const saved = loadSavedGame();
+            if (!saved) {
+                goToTerminalFromContinue();
+                return;
+            }
+	    if (isMissionScreen(saved.screen)) {
+                lastMissionScreen = saved.screen;
+            }
+            unlockedPhase = saved.unlockedPhase;
+            chosenDate = saved.chosenDate;
+            if (saved.screen >= 4 && saved.screen <= 15) {
+                lastMissionScreen = saved.screen;
+            }
+            syncDateUI();
+            goToScreen(saved.screen, false); // No re-disparar toast al cargar
+        }
+
+        function goToTerminalFromContinue() {
+            const contEl = document.getElementById('screen-continue');
+            contEl.classList.remove('visible');
             setTimeout(() => {
-                nextScreen(1, 'title');
-                
-                // Quitamos el blanco rápido para revelar el fondo nevado
-                setTimeout(() => {
-                    flash.style.opacity = '0';
-                }, 100);
+                contEl.classList.remove('active');
+                openTerminalScreen();
             }, 300);
         }
 
-        /**
-         * Maneja la transición de desvanecimiento entre pantallas
-         */
-        function nextScreen(current, next) {
-            const currentScreen = document.getElementById(`screen-${current}`);
-            const nextScreen = document.getElementById(`screen-${next}`);
+        /* =====================================================================
+           PANTALLA 1: TERMINAL HACKER (TYPEWRITER, CONTRASEÑA, ATAJOS, REINICIAR)
+        ===================================================================== */
+        function openTerminalScreen() {
+            currentScreen = 1;
+            updateFloatingMapButton(1);
+            const termScreen = document.getElementById('screen-1');
+            termScreen.classList.add('active', 'visible');
 
-            currentScreen.style.opacity = '0';
-            
-            setTimeout(() => {
-                currentScreen.classList.remove('active');
-                nextScreen.classList.add('active');
-                
-                setTimeout(() => {
-                    nextScreen.style.opacity = '1';
-                    
-                    if (next === 'title') {
-                        startTitleAnimation();
-                    }
-
-                    // Celebración en la última pantalla (ahora es la 16)
-                    if (next === 16) {
-                        triggerCelebration();
-                    }
-                }, 50);
-            }, 800);
-        }
-
-        function startTitleAnimation() {
-            setTimeout(() => {
-                const logo = document.getElementById('logo-img');
-                if (logo) {
-                    logo.classList.add('animate-bounce-in');
-                    logo.style.opacity = '1';
-                }
-            }, 500); // A medio segundo salta el logo rebotando
-
-            setTimeout(() => {
-                const novio = document.getElementById('novio-img');
-                if (novio) novio.style.opacity = '1';
-            }, 1800); // Apareces tú a la izquierda
-
-            setTimeout(() => {
-                const novia = document.getElementById('novia-img');
-                if (novia) novia.style.opacity = '1';
-            }, 3100); // Aparece tu novia a la derecha
-
-            setTimeout(() => {
-                const text = document.getElementById('start-text');
-                if (text) {
-                    text.style.opacity = '1';
-                    text.classList.add('animate-blink-text');
-                }
-            }, 4400); // Y finalmente el texto parpadeante
-        }
-
-        /**
-         * Genera copos de nieve en el fondo al cargar la página
-         */
-        function createSnow() {
-            const snowContainer = document.getElementById('snow-container');
-            const flakes = ['❄', '❅', '❆'];
-            const numFlakes = 30; // Cantidad de copos
-
-            for (let i = 0; i < numFlakes; i++) {
-                const flake = document.createElement('div');
-                flake.classList.add('snowflake');
-                
-                // Selección aleatoria del tipo de copo
-                flake.innerText = flakes[Math.floor(Math.random() * flakes.length)];
-                
-                // Posición y tamaño aleatorio
-                flake.style.left = `${Math.random() * 100}vw`;
-                flake.style.fontSize = `${(Math.random() * 1) + 0.5}em`;
-                flake.style.opacity = Math.random();
-                
-                // Tiempos de animación aleatorios para que no caigan todos igual
-                const fallDuration = (Math.random() * 10) + 10; // entre 10s y 20s
-                const fallDelay = Math.random() * 10;
-                
-                flake.style.animationDuration = `${fallDuration}s, 3s`;
-                flake.style.animationDelay = `-${fallDelay}s, -${Math.random() * 3}s`;
-                
-                snowContainer.appendChild(flake);
+            if (!terminalInitialized) {
+                terminalInitialized = true;
+                startTerminalTypewriter();
+            } else {
+                const input = document.getElementById('terminal-input');
+                if (input && !terminalBusy) input.focus();
             }
         }
 
-        /**
-         * Cambia la nieve por emojis de celebración en la pantalla final
-         */
-        function triggerCelebration() {
-            const snowContainer = document.getElementById('snow-container');
-            // Limpiamos la nieve
-            snowContainer.innerHTML = '';
-            
-            const emojis = ['❤️', '✨', '🥂', '🎉'];
-            const numEmojis = 40;
+        function typeWriter(text, elementId, speed, callback) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.textContent = '';
+            el.classList.add('term-cursor');
 
-            for (let i = 0; i < numEmojis; i++) {
-                const element = document.createElement('div');
-                element.classList.add('snowflake'); // Reutilizamos la animación de caída
-                
-                element.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-                element.style.left = `${Math.random() * 100}vw`;
-                element.style.fontSize = `${(Math.random() * 1.5) + 1}em`;
-                
-                const fallDuration = (Math.random() * 5) + 5; 
-                element.style.animationDuration = `${fallDuration}s, 3s`;
-                
-                snowContainer.appendChild(element);
-            }
-        }
-
-        /**
-         * Efecto máquina de escribir para la terminal inicial
-         */
-        function typeWriter(text, elementId, delay, callback) {
-            const element = document.getElementById(elementId);
-            element.classList.add('cursor');
             let i = 0;
-            function type() {
+            function nextChar() {
                 if (i < text.length) {
-                    element.innerHTML += text.charAt(i);
+                    el.textContent += text.charAt(i);
                     i++;
-                    setTimeout(type, delay);
+                    const container = document.getElementById('screen-1');
+                    if (container) container.scrollTop = container.scrollHeight;
+                    setTimeout(nextChar, speed);
                 } else {
-                    element.classList.remove('cursor');
+                    el.classList.remove('term-cursor');
                     if (callback) callback();
                 }
             }
-            type();
+            nextChar();
         }
 
-        /**
-         * Secuencia de textos de la terminal
-         */
-        function startIntro() {
-            const speed = 40; // milisegundos por letra
-            const pause = 700; // pausa entre frases
-            
-            typeWriter("Hola, bienvenida.", "term-1", speed, () => {
+        function startTerminalTypewriter() {
+            const speed = 34;
+            const pause = 480;
+
+            typeWriter('Hola, bienvenida.', 'term-1', speed, () => {
                 setTimeout(() => {
-                    typeWriter("Te estarás preguntando que es todo esto, ¿verdad?", "term-2", speed, () => {
+                    typeWriter('Te estarás preguntando que es todo esto, ¿verdad?', 'term-2', speed, () => {
                         setTimeout(() => {
-                            typeWriter("Antes de descubrirte esta parte del regalo tendremos que darle algo de tensión no? ;)", "term-3", speed, () => {
+                            typeWriter('Antes de descubrirte esta parte del regalo tendremos que darle algo de tensión no? ;)', 'term-3', speed, () => {
                                 setTimeout(() => {
-                                    typeWriter("Si quieres descubrir de que va esto vas a tener que descifrar la contraseña para avanzar", "term-4", speed, () => {
+                                    typeWriter('Si quieres descubrir de que va esto vas a tener que poner la contraseña para avanzar', 'term-4', speed, () => {
                                         setTimeout(() => {
-                                            typeWriter("Te dejo una pequeña pregunta: ¿Si viniese un pequeño elfo a atacar a tu Gabrielín, ¿qué arma blanca usarías para protegerlo?", "term-5", speed, () => {
-                                                // Mostrar el input al terminar de escribir todo
-                                                const inputWrapper = document.getElementById('term-input-wrapper');
-                                                inputWrapper.classList.remove('hidden');
-                                                setTimeout(() => {
-                                                    inputWrapper.style.opacity = '1';
-                                                    document.getElementById('input-1').focus();
-                                                }, 50);
+                                            typeWriter('Te dejo una primera pista: ¿Si viniese un pequeño elfo navideño a atacar a tu Gabrielín, ¿qué arma blanca usarías para protegerlo?', 'term-5', speed, () => {
+                                                const wrap = document.getElementById('term-prompt-wrap');
+                                                wrap.classList.add('show');
+                                                const input = document.getElementById('terminal-input');
+                                                if (input) input.focus();
                                             });
                                         }, pause);
                                     });
@@ -661,27 +1542,656 @@
             });
         }
 
-        // Permitir usar la tecla 'Enter' para enviar la respuesta en cualquier pantalla
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    // Extraer ID paso a paso, asegurando que encuentra el num correcto incluso en IDs como "date-mission" (que no tienen checkAnswer pero no pasa nada)
-                    const idParts = this.id.split('-');
-                    if(idParts[1]) {
-                        const stepNum = idParts[1]; 
-                        const btn = document.querySelector(`button[onclick*="checkAnswer(${stepNum}"]`);
-                        if (btn) btn.click();
+        function appendTerminalLog(message) {
+            const log = document.getElementById('term-log');
+            if (!log) return;
+            const p = document.createElement('p');
+            p.className = 'term-line';
+            p.textContent = message;
+            log.appendChild(p);
+            const termScreen = document.getElementById('screen-1');
+            if (termScreen) termScreen.scrollTop = termScreen.scrollHeight;
+        }
+
+        function handleTerminalSubmit(event) {
+            event.preventDefault();
+            if (terminalBusy) return;
+
+            const input = document.getElementById('terminal-input');
+            const rawVal = input.value;
+            const normalized = normalizeText(rawVal);
+
+            if (!normalized) return;
+
+            // 1) Comando secreto "reiniciar"
+            if (normalized === 'reiniciar') {
+                clearSavedGame();
+                appendTerminalLog('> [SISTEMA] Partida guardada eliminada. Memoria reiniciada.');
+                input.value = '';
+                input.focus();
+                return;
+            }
+
+            // 2) Atajos secretos de fase (ATAJOS_FASE)
+            if (Object.prototype.hasOwnProperty.call(ATAJOS_FASE, normalized)) {
+                const shortcut = ATAJOS_FASE[normalized];
+                terminalBusy = true;
+                input.blur();
+                unlockedPhase = Math.max(unlockedPhase, shortcut.phase);
+                runTerminalShortcut(shortcut.screen);
+                return;
+            }
+
+            // 3) Contraseña principal ("piedra")
+            if (normalized === TERMINAL_PASSWORD || normalized.includes(TERMINAL_PASSWORD)) {
+                terminalBusy = true;
+                input.blur();
+                runTerminalMainSuccess();
+                return;
+            }
+
+            // 4) Contraseña incorrecta
+            appendTerminalLog('> Acceso denegado. Inténtalo de nuevo.');
+            input.value = '';
+            input.focus();
+        }
+
+        function runTerminalMainSuccess() {
+            const wrap = document.getElementById('term-prompt-wrap');
+            wrap.classList.remove('show');
+
+            typeWriter('Entrada correcta, empieza ejecución de operación "En busca del regalo"', 'term-success', 32, () => {
+                setTimeout(() => {
+                    const loadingEl = document.getElementById('term-loading');
+                    loadingEl.classList.add('term-cursor');
+                    loadingEl.textContent = 'Cargando...... 0%';
+
+                    // ~3 segundos de subida aleatoria del 0% al 100%
+                    let pct = 0;
+                    const interval = setInterval(() => {
+                        pct += Math.floor(Math.random() * 4) + 1;
+                        if (pct >= 100) {
+                            pct = 100;
+                            clearInterval(interval);
+                            loadingEl.textContent = 'Cargando...... 100%';
+                            loadingEl.classList.remove('term-cursor');
+
+                            setTimeout(() => {
+                                typeWriter('Carga correcta, iniciando...', 'term-final', 32, () => {
+                                    setTimeout(() => flashTransitionToScreen(2, false), 500);
+                                });
+                            }, 280);
+                        } else {
+                            loadingEl.textContent = `Cargando...... ${pct}%`;
+                        }
+                    }, 75);
+                }, 280);
+            });
+        }
+
+        function runTerminalShortcut(targetScreen) {
+            const wrap = document.getElementById('term-prompt-wrap');
+            wrap.classList.remove('show');
+
+	    // Pone el texto de confirmación del atajo en rojo
+            document.getElementById('term-success').style.color = '#f87171';
+
+            typeWriter('Atajo detectado... saltando a fase...', 'term-success', 24, () => {
+		document.getElementById('term-loading').style.color = '#f87171';
+                const loadingEl = document.getElementById('term-loading');
+                loadingEl.classList.add('term-cursor');
+                loadingEl.textContent = 'Cargando...... 0%';
+
+                // Carga rápida de ~1 segundo
+                let pct = 0;
+                const interval = setInterval(() => {
+                    pct += Math.floor(Math.random() * 10) + 7;
+                    if (pct >= 100) {
+                        pct = 100;
+                        clearInterval(interval);
+                        loadingEl.textContent = 'Cargando...... 100%';
+                        loadingEl.classList.remove('term-cursor');
+                        setTimeout(() => flashTransitionToScreen(targetScreen, true), 220);
+                    } else {
+                        loadingEl.textContent = `Cargando...... ${pct}%`;
                     }
+                }, 80);
+            });
+        }
+
+        function flashTransitionToScreen(targetNum, shouldSave) {
+            const flash = document.getElementById('white-flash');
+            flash.style.opacity = '1';
+
+            setTimeout(() => {
+                const screen1 = document.getElementById('screen-1');
+                screen1.classList.remove('visible', 'active');
+
+		// Reset visual de la terminal por si vuelve más adelante
+                terminalBusy = false;
+                document.getElementById('term-success').textContent = '';
+                document.getElementById('term-success').style.color = '';
+                document.getElementById('term-loading').textContent = '';
+                document.getElementById('term-loading').style.color = '';
+                document.getElementById('term-final').textContent = '';
+                document.getElementById('terminal-input').value = '';
+                document.getElementById('term-prompt-wrap').classList.add('show');
+
+                currentScreen = targetNum;
+                if (targetNum >= 4 && targetNum <= 15) {
+                    lastMissionScreen = targetNum;
+                }
+
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                updateFloatingMapButton(targetNum);
+
+                if (targetNum === 3) renderMissionMap();
+                if (targetNum === 4) syncDateUI();
+                if (targetNum === 16) {
+                    updateFinaleDateUI();
+                    startFireworks();
+                }
+
+                const targetEl = document.getElementById(`screen-${targetNum}`);
+                targetEl.classList.add('active', 'visible');
+
+                if (targetNum === 2) {
+                    startCoverAnimations();
+                }
+
+                if (shouldSave && targetNum >= 3) {
+                    saveGameProgress(targetNum, true);
+                }
+
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                }, 120);
+            }, 350);
+        }
+
+        /* =====================================================================
+           PANTALLA 2: PORTADA (ANIMACIONES SECUENCIALES + TAP PARA EMPEZAR)
+        ===================================================================== */
+        function startCoverAnimations() {
+            coverReadyToTap = false;
+
+            const logo = document.getElementById('img-logo');
+            const gab = document.getElementById('img-gabrielin');
+            const boro = document.getElementById('img-borobombon');
+            const prompt = document.getElementById('cover-tap-prompt');
+
+            logo.classList.remove('bounce-in');
+            gab.classList.remove('bounce-in');
+            boro.classList.remove('bounce-in');
+            prompt.classList.remove('blink');
+
+            setTimeout(() => logo.classList.add('bounce-in'), 280);
+            setTimeout(() => gab.classList.add('bounce-in'), 1150);
+            setTimeout(() => boro.classList.add('bounce-in'), 1900);
+            setTimeout(() => {
+                prompt.classList.add('blink');
+                coverReadyToTap = true;
+            }, 2650);
+        }
+
+        function handleCoverTap() {
+            if (!coverReadyToTap) return;
+            coverReadyToTap = false;
+            goToScreen(3, true);
+        }
+
+        /* =====================================================================
+           NAVEGACIÓN ENTRE PANTALLAS Y BOTÓN FLOTANTE DE MAPA
+        ===================================================================== */
+	function updateFloatingMapButton(screenNum) {
+        	    const btn = document.getElementById('floating-map-btn');
+	            if (!btn) return;
+	            if (isMissionScreen(screenNum)) {
+	                btn.classList.add('visible');
+	            } else {
+	                btn.classList.remove('visible');
+        	    }
+	        }
+
+        	function openMapFromMission() {
+	            if (isMissionScreen(currentScreen)) {
+	                lastMissionScreen = currentScreen;
+        	    }
+	            goToScreen(3, false);
+        	}
+
+	        function returnToMissionScreen() {
+	            if (isMissionScreen(lastMissionScreen)) {
+        	        goToScreen(lastMissionScreen, false);
+	            }
+	        }
+	
+	        function goToScreen(targetNum, shouldSave = true) {
+	            const currentEl = currentScreen === 0
+	                ? document.getElementById('screen-continue')
+	                : document.getElementById(`screen-${currentScreen}`);
+	            const targetEl = document.getElementById(`screen-${targetNum}`);
+	            if (!targetEl) return;
+
+        	    if (currentEl) currentEl.classList.remove('visible');
+	
+	            setTimeout(() => {
+	                if (currentEl) currentEl.classList.remove('active');
+
+	                currentScreen = targetNum;
+	                if (isMissionScreen(targetNum)) {
+	                    lastMissionScreen = targetNum;
+	                }
+
+	                window.scrollTo({ top: 0, behavior: 'instant' });
+	                updateFloatingMapButton(targetNum);
+	
+	                if (targetNum === 3) renderMissionMap();
+	                if (targetNum === 4) syncDateUI();
+	                if (targetNum === '4b') {
+	                    const fechaInput = document.getElementById('mission-date')?.value;
+	                    iniciarCuentaAtras(chosenDate || fechaInput);
+	                }
+
+	                targetEl.classList.add('active');
+	                requestAnimationFrame(() => {
+	                    targetEl.classList.add('visible');
+	                });
+
+        	        if (targetNum === 16) {
+	                    updateFinaleDateUI();
+	                    startFireworks();
+        	        } else {
+                	    stopFireworks();
+	                }
+
+        	        if (shouldSave && (targetNum === '4b' || targetNum >= 3)) {
+                	    saveGameProgress(targetNum, true);
+	                }
+        	    }, 300);
+	        }
+
+        /* =====================================================================
+           PANTALLA 3: MAPA PROGRESIVO
+        ===================================================================== */
+        function renderMissionMap() {
+            const list = document.getElementById('mission-map-list');
+            const datePill = document.getElementById('map-date-pill');
+            const primaryBtn = document.getElementById('btn-map-primary');
+            const returnBtn = document.getElementById('btn-map-return');
+
+            if (!list) return;
+
+            // Mostrar fecha elegida si existe
+            if (chosenDate) {
+                datePill.textContent = `📅 Fecha elegida: ${formatDateSpanish(chosenDate)}`;
+                datePill.style.display = 'inline-block';
+            } else {
+                datePill.style.display = 'none';
+            }
+
+            list.innerHTML = '';
+
+            MAP_PHASES.forEach((phase) => {
+                const isUnlocked = phase.id <= unlockedPhase;
+                const isCompleted = (phase.id === 0 && Boolean(chosenDate)) || (phase.id > 0 && phase.id < unlockedPhase);
+
+                const itemBtn = document.createElement('button');
+                itemBtn.type = 'button';
+                itemBtn.className = 'map-item ' + (!isUnlocked ? 'locked' : (isCompleted ? 'completed' : 'unlocked'));
+
+                if (isUnlocked) {
+                    itemBtn.onclick = () => goToScreen(phase.screen, true);
+                } else {
+                    itemBtn.disabled = true;
+                }
+
+                if (!isUnlocked) {
+                    // Sin spoilers cuando está bloqueada
+                    itemBtn.innerHTML = `
+                        <span class="map-icon">🔒</span>
+                        <div class="map-text-col">
+                            <span class="map-title">🔒 [Misión Clasificada]</span>
+                        </div>
+                        <span class="map-status"></span>
+                    `;
+                } else {
+                    const subText = phase.id === 0
+                        ? (chosenDate ? `Confirmada: ${formatDateSpanish(chosenDate)}` : 'Pendiente de seleccionar')
+                        : (isCompleted ? 'Superada' : 'Disponible ahora');
+
+                    itemBtn.innerHTML = `
+                        <span class="map-icon">${phase.icon}</span>
+                        <div class="map-text-col">
+                            <span class="map-title">${phase.title}</span>
+                            <span class="map-sub">${subText}</span>
+                        </div>
+                        <span class="map-status">${isCompleted ? '✅' : '➡️'}</span>
+                    `;
+                }
+
+                list.appendChild(itemBtn);
+            });
+
+            // Botón principal dinámico
+            if (unlockedPhase === 0) {
+                primaryBtn.textContent = 'Comenzar Fase 0 (Elegir Día)';
+            } else if (unlockedPhase <= 5) {
+                primaryBtn.textContent = `Ir a la Fase ${unlockedPhase}`;
+            } else {
+                primaryBtn.textContent = 'Ver Final de la Aventura 🎄';
+            }
+
+            // Botón de retorno a la misión actual si ya estaba en curso
+            if (isMissionScreen(lastMissionScreen)) {
+                returnBtn.style.display = 'block';
+            } else {
+                returnBtn.style.display = 'none';
+            }
+        }
+
+        function goToPrimaryMissionScreen() {
+            if (unlockedPhase >= 6) {
+                goToScreen(16, true);
+                return;
+            }
+            const activePhase = MAP_PHASES.find((p) => p.id === unlockedPhase);
+            goToScreen(activePhase ? activePhase.screen : 4, true);
+        }
+
+        /* =====================================================================
+           PANTALLA 4: SELECTOR DE FECHA (FASE 0)
+        ===================================================================== */
+        const missionDateInput = document.getElementById('mission-date');
+        const dateFormattedPill = document.getElementById('date-formatted-pill');
+        const btnDateContinue = document.getElementById('btn-date-continue');
+
+        function syncDateUI() {
+            if (!missionDateInput) return;
+            if (chosenDate) {
+                missionDateInput.value = chosenDate;
+                dateFormattedPill.textContent = `📅 ${formatDateSpanish(chosenDate)}`;
+                dateFormattedPill.style.display = 'inline-block';
+                btnDateContinue.disabled = false;
+            } else {
+                missionDateInput.value = '';
+                dateFormattedPill.style.display = 'none';
+                btnDateContinue.disabled = true;
+            }
+        }
+
+        if (missionDateInput) {
+            missionDateInput.addEventListener('change', () => {
+                if (missionDateInput.value) {
+                    chosenDate = missionDateInput.value;
+                    dateFormattedPill.textContent = `📅 ${formatDateSpanish(chosenDate)}`;
+                    dateFormattedPill.style.display = 'inline-block';
+                    btnDateContinue.disabled = false;
+                    saveGameProgress(4, true);
+                } else {
+                    dateFormattedPill.style.display = 'none';
+                    btnDateContinue.disabled = true;
                 }
             });
+        }
+
+        /* =====================================================================
+           VALIDACIÓN DE CONTRASEÑAS (PANTALLAS 6, 8, 10, 13 Y 15)
+        ===================================================================== */
+        function checkPassword(screenNum) {
+            const config = MISSION_PASSWORDS[screenNum];
+            if (!config) return;
+
+            const input = document.getElementById(`input-${screenNum}`);
+            const errorEl = document.getElementById(`error-${screenNum}`);
+            if (!input || !errorEl) return;
+
+            const userNorm = normalizeText(input.value);
+            const expectedNorm = normalizeText(config.password);
+
+            if (userNorm.length > 0 && (userNorm === expectedNorm || userNorm.includes(expectedNorm))) {
+                errorEl.classList.remove('show');
+                input.classList.remove('input-error');
+                input.blur();
+
+                unlockedPhase = Math.max(unlockedPhase, config.unlockPhase);
+                goToScreen(config.nextScreen, true);
+            } else {
+                errorEl.classList.add('show');
+                input.classList.remove('input-error');
+                void input.offsetWidth; // Reinicia la animación shake
+                input.classList.add('input-error');
+            }
+        }
+
+        // Permitir enviar con la tecla Enter / Ir en todos los acertijos
+        Object.keys(MISSION_PASSWORDS).forEach((key) => {
+            const screenNum = Number(key);
+            const input = document.getElementById(`input-${screenNum}`);
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        checkPassword(screenNum);
+                    }
+                });
+            }
         });
 
-        // Iniciar la nieve de fondo y la intro de la terminal al cargar
-        window.onload = () => {
-            createSnow();
-            startIntro();
-        };
+        /* =====================================================================
+           PANTALLA 16: RESUMEN FINAL Y FUEGOS ARTIFICIALES
+        ===================================================================== */
+        function updateFinaleDateUI() {
+            const pill = document.getElementById('finale-date-pill');
+            if (!pill) return;
+            if (chosenDate) {
+                pill.textContent = `📅 Día de nuestra aventura: ${formatDateSpanish(chosenDate)}`;
+                pill.style.display = 'inline-block';
+            } else {
+                pill.style.display = 'none';
+            }
+        }
 
+        const fwCanvas = document.getElementById('fireworks-canvas');
+        const fwCtx = fwCanvas.getContext('2d');
+        let fwParticles = [];
+        let fwActive = false;
+        let fwAnimId = null;
+        let fwTimer = null;
+
+        function resizeFireworksCanvas() {
+            fwCanvas.width = window.innerWidth;
+            fwCanvas.height = window.innerHeight;
+        }
+
+        function spawnFireworkBurst() {
+            const colors = ['#fbbf24', '#f87171', '#4ade80', '#60a5fa', '#f472b6', '#ffffff'];
+            const cx = Math.random() * (fwCanvas.width * 0.76) + fwCanvas.width * 0.12;
+            const cy = Math.random() * (fwCanvas.height * 0.42) + fwCanvas.height * 0.12;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            for (let i = 0; i < 36; i++) {
+                const angle = (Math.PI * 2 * i) / 36 + Math.random() * 0.12;
+                const speed = Math.random() * 3.5 + 1.3;
+                fwParticles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 3 + 1.8,
+                    life: 1,
+                    decay: Math.random() * 0.015 + 0.012,
+                    color
+                });
+            }
+        }
+
+        function animateFireworks() {
+            if (!fwActive) return;
+            fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+            for (let i = fwParticles.length - 1; i >= 0; i--) {
+                const p = fwParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.045;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    fwParticles.splice(i, 1);
+                    continue;
+                }
+
+                fwCtx.globalAlpha = p.life;
+                fwCtx.fillStyle = p.color;
+                fwCtx.beginPath();
+                fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                fwCtx.fill();
+            }
+            fwCtx.globalAlpha = 1;
+            fwAnimId = requestAnimationFrame(animateFireworks);
+        }
+
+        function startFireworks() {
+            if (fwActive) return;
+            fwActive = true;
+            fwCanvas.style.display = 'block';
+            resizeFireworksCanvas();
+            spawnFireworkBurst();
+            fwTimer = setInterval(spawnFireworkBurst, 850);
+            animateFireworks();
+        }
+
+        function stopFireworks() {
+            fwActive = false;
+            fwCanvas.style.display = 'none';
+            if (fwTimer) clearInterval(fwTimer);
+            if (fwAnimId) cancelAnimationFrame(fwAnimId);
+            fwParticles = [];
+        }
+
+        /* =====================================================================
+           CANVAS FIJO DE NIEVE SUAVE
+        ===================================================================== */
+        const snowCanvas = document.getElementById('snow-canvas');
+        const snowCtx = snowCanvas.getContext('2d');
+        let snowflakes = [];
+
+        function resizeSnowCanvas() {
+            snowCanvas.width = window.innerWidth;
+            snowCanvas.height = window.innerHeight;
+        }
+
+        function initSnow() {
+            resizeSnowCanvas();
+            snowflakes = [];
+            const count = Math.min(75, Math.floor(window.innerWidth / 7));
+            for (let i = 0; i < count; i++) {
+                snowflakes.push({
+                    x: Math.random() * snowCanvas.width,
+                    y: Math.random() * snowCanvas.height,
+                    r: Math.random() * 2.4 + 0.9,
+                    vy: Math.random() * 1.0 + 0.4,
+                    vx: Math.random() * 0.5 - 0.25,
+                    alpha: Math.random() * 0.65 + 0.25
+                });
+            }
+        }
+
+        function drawSnow() {
+            snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            for (let i = 0; i < snowflakes.length; i++) {
+                const f = snowflakes[i];
+                snowCtx.beginPath();
+                snowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                snowCtx.fillStyle = `rgba(255, 255, 255, ${f.alpha})`;
+                snowCtx.fill();
+
+                f.y += f.vy;
+                f.x += f.vx + Math.sin(f.y * 0.015) * 0.25;
+
+                if (f.y > snowCanvas.height + 5) {
+                    f.y = -5;
+                    f.x = Math.random() * snowCanvas.width;
+                }
+                if (f.x > snowCanvas.width + 5) f.x = -5;
+                if (f.x < -5) f.x = snowCanvas.width + 5;
+            }
+            requestAnimationFrame(drawSnow);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeSnowCanvas();
+            if (fwActive) resizeFireworksCanvas();
+        });
+
+        /* =====================================================================
+           ARRANQUE INICIAL: COMPRUEBA SI HAY PARTIDA GUARDADA
+        ===================================================================== */
+        window.addEventListener('load', () => {
+            initSnow();
+            drawSnow();
+
+            const saved = loadSavedGame();
+            if (saved && (saved.screen === '4b' || saved.screen >= 3)) {
+                showContinueScreen(saved);
+            } else {
+                openTerminalScreen();
+            }
+        });
+
+	const HORA_INICIO = 9; // Se desbloquea a las 09:00 de la mañana (pon 0 para las 00:00)
+	let intervaloCuentaAtras = null;
+	
+	function iniciarCuentaAtras(fechaStr) {
+	  if (!fechaStr) return;
+
+	  // Mostrar fecha bonita (DD/MM/YYYY)
+	  const [anio, mes, dia] = fechaStr.split('-').map(Number);
+	  document.getElementById('fecha-elegida-texto').textContent = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${anio}`;
+
+	  // Fecha objetivo en hora local (compatible con iPhone/Safari)
+	  const objetivo = new Date(anio, mes - 1, dia, HORA_INICIO, 0, 0).getTime();
+
+	  const btn = document.getElementById('btn-desbloquear-mision');
+	  clearInterval(intervaloCuentaAtras);
+
+	  function actualizar() {
+	    const ahora = Date.now();
+	    const diff = objetivo - ahora;
+
+	    if (diff <= 0) {
+	      clearInterval(intervaloCuentaAtras);
+	      document.getElementById('cd-days').textContent = '00';
+	      document.getElementById('cd-hours').textContent = '00';
+	      document.getElementById('cd-mins').textContent = '00';
+	      document.getElementById('cd-secs').textContent = '00';
+
+	      btn.disabled = false;
+	      btn.classList.remove('btn-locked');
+	      btn.textContent = '🚀 ¡Comenzar la Misión!';
+	      return;
+	    }
+
+	    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+	    const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+	    const mins = Math.floor((diff / (1000 * 60)) % 60);
+	    const secs = Math.floor((diff / 1000) % 60);
+
+	    document.getElementById('cd-days').textContent = String(dias).padStart(2, '0');
+	    document.getElementById('cd-hours').textContent = String(horas).padStart(2, '0');
+	    document.getElementById('cd-mins').textContent = String(mins).padStart(2, '0');
+	    document.getElementById('cd-secs').textContent = String(secs).padStart(2, '0');
+
+	    btn.disabled = true;
+	    btn.classList.add('btn-locked');
+	    btn.textContent = '🔒 Esperando al gran día...';
+	  }
+
+	  actualizar();
+	  intervaloCuentaAtras = setInterval(actualizar, 1000);
+	}	
+	
     </script>
 </body>
 </html>
